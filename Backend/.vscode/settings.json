@@ -1,4 +1,4 @@
 {
-    "appService.defaultWebAppToDeploy": "/subscriptions/3b7ef9f3-48fc-4d29-a9f8-3de02b79dac0/resourceGroups/rg-dev-fer/providers/Microsoft.Web/sites/facial-emotion-recognition-backend-dev-v2",
+    "appService.defaultWebAppToDeploy": "",
     "appService.deploySubpath": "."
 }

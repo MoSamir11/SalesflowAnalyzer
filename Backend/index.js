@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 // <disable>JS1001.SyntaxError</disable>
-
+//V-1.1
 const { Console } = require('console');
 const databaseFunctions = require('./sqlDatabase');
 const constants = require('./constants.json');
@@ -38,7 +38,7 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
     })
 
     app.get('/', async (req, res, next) => {
-        res.send({ message: "Welcome to FER Backend" });
+        res.send({ message: "Welcome to SalesFlow Analyzer Backend" });
     })
 
     app.get('/api/get-speech-token', async (req, res, next) => {
@@ -290,7 +290,7 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
         }
     })
 
-
+    /*
     var userDeatils = []
     io.on("connection", (socket) => {
         socket.emit("me", socket.id)
@@ -348,6 +348,58 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
             //console.log("IceCandidate.END");
         });
     })
+    */
+
+    const users = {};
+
+    const socketToRoom = {};
+
+    io.on('connection', socket => {
+        socket.on("join room", data => {
+            let {roomID, email, person} = data
+            if (users[roomID]) {
+                const length = users[roomID].length;
+                if (length === 4) {
+                    socket.emit("room full");
+                    return;
+                }
+                //users[roomID].push(socket.id);
+                users[roomID].push({"id": socket.id, "email" : email, "role" : person});
+            } else {
+                //users[roomID] = [socket.id];
+                users[roomID] = [{"id": socket.id, "email" : email, "role" : person}];
+            }
+            socketToRoom[socket.id] = roomID;
+            //const usersInThisRoom = users[roomID].filter(id => id !== socket.id);
+            const usersInThisRoom = users[roomID].filter(obj => obj.id !== socket.id);
+            //console.log(usersInThisRoom)
+            socket.emit("all users", usersInThisRoom);
+        });
+    
+        socket.on("sending signal", payload => {
+            console.log(payload)
+            io.to(payload.userToSignal).emit('user joined', { signal: payload.signal, callerID: payload.callerID, role: payload.person });
+        });
+    
+        socket.on("returning signal", payload => {
+            io.to(payload.callerID).emit('receiving returned signal', { signal: payload.signal, id: socket.id, role: payload.role });
+        });
+
+        socket.on("sendMSG", (data) => {
+            //console.log(data)
+            io.to(data.to).emit("sendMSGToSalesmen", { to: data.to, message : data.message })
+        })
+    
+        socket.on('disconnect', () => {
+            const roomID = socketToRoom[socket.id];
+            let room = users[roomID];
+            if (room) {
+                room = room.filter(id => id !== socket.id);
+                users[roomID] = room;
+            }
+        });
+    
+    });
 
     server.listen(port, () => {
         console.log('Express server is running on localhost:' + port);
