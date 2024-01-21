@@ -22,6 +22,7 @@ import { getRelativePosition } from 'chart.js/helpers';
 	Legend
   );
 */
+//V-1.11
 
 //const socket = io.connect('http://localhost:3001')
 //const authorizationEndpoint = "http://localhost:3001/api/get-speech-token";
