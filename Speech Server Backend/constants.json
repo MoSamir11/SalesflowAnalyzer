@@ -1,0 +1,7 @@
+{
+  "server" : "salesflow-analyzer-dev.database.windows.net",
+  "database" : "salesflow-database",
+  "baseURL" : "https://facial-emotion-recognition-dev-v2.azurewebsites.net/",
+  "AILanguageServiceEndPoint" : "https://ocm-chatbot.cognitiveservices.azure.com/",
+  "AILanguageServiceKey" : "87c2908acfab47bb89745ba8ff6a8103"
+}
