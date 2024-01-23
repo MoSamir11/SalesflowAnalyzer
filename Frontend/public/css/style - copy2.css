@@ -44,7 +44,7 @@ li {
 .main-layout {
     background: #f3edffba;
     flex: 1;
-    min-height: 100vh;
+    overflow: hidden;
 }
 
 .user i {
@@ -71,38 +71,6 @@ li {
 
 /* Layout skeleton */
 
-.controls-client {
-  display: flex;
-  gap: 30px!important;
-}
-
-  .control-circle-client {
-      font-size: 1.5em;
-      color: #333;
-      width: 50px!important;
-      height: 50px!important;
-      border-radius: 100%;
-      background: linear-gradient(
-        to right, 
-        rgba(255, 255, 255, 1), 
-        rgba(255, 255, 255, 1)
-      );
-      display: flex;
-      justify-content: center;
-      align-items: center;
-  }
-
-  .control-circle-red-client {
-      font-size: 1.5em;
-      color: #e9ecef;
-      width: 50px!important;
-      height: 50px!important;
-      border-radius: 100%;
-      background: #cc1717;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-  }
 
 .wrapper {
     align-items: stretch;
@@ -162,45 +130,26 @@ main {
 
 .video-container {
     position: relative;
-    padding-bottom: 50.25%;
+    padding-bottom: 56.25%;
     border-radius: 10px;
     overflow: hidden;
 }
 
-.salesman-video video {
+video {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     border-radius: inherit; 
-    object-fit: cover;
 }
 
-.client-video video{
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: inherit; 
-  object-fit: cover;
-}
-
-.profile-overlay-client video {
+.profile-overlay video {
   position: absolute;
   top: 0;
   left: 17px;
   width: 150px; 
   height: 120px;
-}
-
-.profile-overlay-salesman video {
-  position: absolute;
-  top: 0;
-  left: 17px;
-  width: 90px; 
-  height: 70px;
 }
 
 .custom-img {
@@ -284,16 +233,10 @@ a.sidebar-link:hover {
     transition: all .2s ease-out;
 }
 
-.content-client {
+.content {
     flex: 1;
     max-width: 100vw;
     width: 100vw;
-}
-
-.content-salesman {
-  flex: 1;
-  max-width: 100vw;
-  width: 100vw;
 }
 
 
@@ -339,20 +282,17 @@ a.sidebar-link:hover {
   background: #712cf9 ;
 }
 
-.controls-wrapper {
-  position: absolute!important;
-  bottom: 10px!important;
-  left: 50%!important;
-  transform: translateX(-50%)!important;
-}
-
 .controls {
   display: flex;
-  gap: 10px!important;
+  gap: 50px!important;
+  justify-content: center;
+  position: absolute;
+  bottom: 5%;
+  left: 25%!important;
 }
 
 .control-circle {
-    font-size: 1.1em;
+    font-size: 1.5em;
     color: #333;
     width: 50px!important;
     height: 50px!important;
@@ -587,7 +527,7 @@ a.sidebar-link:hover {
     width: 100%;
     max-width: 400px;
     margin: 0 auto;
-    /* background-color: #fff; */
+    background-color: #fff;
     padding: 20px;
 }
 
@@ -595,8 +535,8 @@ a.sidebar-link:hover {
 .speech-container {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    max-height: 150px;
+    gap: 25px;
+    max-height: 350px;
     overflow-y: scroll;
 }
 
@@ -609,20 +549,20 @@ a.sidebar-link:hover {
 .client-speech {
     background-color: #d9dee2;
     color: #333;
-    border-radius: 10px;
-    padding: 5px;
+    border-radius: 20px;
+    padding: 10px;
     align-self: flex-start;
-    margin-bottom: 1px;
+    margin-bottom: 5px;
 }
 
 
 .salesman-speech {
     background-color: #712cf9;
     color: #fff;
-    border-radius: 10px;
-    padding: 5px;
+    border-radius: 20px;
+    padding: 10px;
     align-self: flex-end;
-    margin-bottom: 1px;
+    margin-bottom: 5px;
 }
 
 
@@ -689,25 +629,18 @@ a.sidebar-link:hover {
 /* Responsive */
 
 @media (width >= 1700px ) {
-    .content-client {
+    .content {
         width: auto;
     }
 
-    .content-salesman {
-      width: auto;
-  }
-
-  .controls-wrapper {
-    position: absolute!important;
-    bottom: 10px!important;
-    left: 50%!important;
-    transform: translateX(-50%)!important;
-  }
-  
-  .controls {
-    display: flex;
-    gap: 10px!important;
-  }
+    .controls {
+        display: flex;
+        gap: 50px;
+        justify-content: center;
+        position: absolute;
+        bottom: 5%;
+        left: 27%!important;
+    }
 
     .control-circle {
         font-size: 2em;
@@ -813,56 +746,32 @@ a.sidebar-link:hover {
 
     .profile-overlay video {
       position: absolute;
-      top: 17px;
-      left: 17px;
-      width: 90px!important; 
-      height: 70px;
+      top: 0;
+      left: 20px;
+      width: 200px!important; 
+      height: 160px;
     }
 }
 
 @media (width >= 1200px ) and (width <=1299px) {
-    .content-client {
+    .content {
         width: auto;
     }
 
-    .content-salesman {
-      width: auto;
-  }
-
-  .chart-res canvas{
-    height: 220px!important;
-    width: 280px!important;
-  }
-
-  .chart-res .sentiment{
-    font-size: .97em!important;
-  }
-
-  .chart-res .sentiment-i{
-    font-size: .97em!important;
-  }
-
-  .chart-res .sentiment-t{
-    font-size: .97em!important;
-  }
-  
-  .controls-wrapper {
-    position: absolute!important;
-    bottom: 15px!important;
-    left: 50%!important;
-    transform: translateX(-50%)!important;
-  }
-  
-  .controls {
-    display: flex;
-    gap: 20px!important;
-  }
+    .controls {
+        display: flex;
+        gap: 50px;
+        justify-content: center;
+        position: absolute;
+        bottom: 5%;
+        left: 15%!important;
+    }
 
     .control-circle {
-        font-size: 1.1em;
+        font-size: 2em;
         color: #333;
-        width: 40px!important;
-        height: 40px!important;
+        width: 70px;
+        height: 70px;
         border-radius: 100%;
         background: linear-gradient(
           to right, 
@@ -875,10 +784,10 @@ a.sidebar-link:hover {
     }
 
     .control-circle-red {
-        font-size: 1.1em;
+        font-size: 2em;
         color: #e9ecef;
-        width: 40px!important;
-        height: 40px!important;
+        width: 70px;
+        height: 70px;
         border-radius: 100%;
         background: #cc1717;
         display: flex;
@@ -962,31 +871,24 @@ a.sidebar-link:hover {
 }
 
 @media (width <= 1399px ) and (width >= 1299px ) {
-    .content-client {
+    .content {
         width: auto;
     }
 
-    .content-salesman {
-      width: auto;
-  }
-
-  .controls-wrapper {
-    position: absolute!important;
-    bottom: 10px!important;
-    left: 50%!important;
-    transform: translateX(-50%)!important;
-  }
-  
-  .controls {
-    display: flex;
-    gap: 10px!important;
-  }
+    .controls {
+        display: flex;
+        gap: 50px;
+        justify-content: center;
+        position: absolute;
+        bottom: 5%;
+        left: 15%!important;
+    }
 
     .control-circle {
-        font-size: 1.4em;
+        font-size: 2em;
         color: #333;
-        width: 50px;
-        height: 50px;
+        width: 70px;
+        height: 70px;
         border-radius: 100%;
         background: linear-gradient(
           to right, 
@@ -999,10 +901,10 @@ a.sidebar-link:hover {
     }
 
     .control-circle-red {
-        font-size: 1.4em;
+        font-size: 2em;
         color: #e9ecef;
-        width: 50px;
-        height: 50px;
+        width: 70px;
+        height: 70px;
         border-radius: 100%;
         background: #cc1717;
         display: flex;
@@ -1087,50 +989,37 @@ a.sidebar-link:hover {
 
 @media (width >= 1024px ) and (width <=1199px) {
 
-    .content-client {
+    .content {
           width: auto;
       }
-
-      .content-salesman {
-        width: auto;
-    }
 
     .pb-res button {
         flex-wrap: nowrap;
     }
 
-    .chart-res canvas{
-      height: 170px!important;
-      width: 200px!important;
-    }
-
-    .profile-overlay-salesman video {
-      position: absolute;
-      top: 0;
-      left: 17px;
-      width: 70px; 
-      height: 60px;
-    }
-
-    .controls-wrapper {
-      position: absolute!important;
-      bottom: 10px!important;
-      left: 50%!important;
-      transform: translateX(-50%)!important;
-    }
-    
     .controls {
-      display: flex;
-      gap: 10px!important;
+        display: flex;
+        gap: 40px!important;
+        justify-content: center;
+        position: absolute;
+        bottom: 5%;
+        left: 15%!important;
     }
 
-    
+    .controls-collapsed {
+        display: flex!important;
+        gap: 40px!important;
+        justify-content: center;
+        position: absolute;
+        bottom: 5%;
+        left: 20%!important;
+    }
 
     .control-circle {
-        font-size: 1em!important;
+        font-size: 1.5em!important;
         color: #333;
-        width: 35px!important;
-        height: 35px!important;
+        width: 40px!important;
+        height: 40px!important;
         border-radius: 100%;
         background: linear-gradient(
           to right, 
@@ -1143,10 +1032,10 @@ a.sidebar-link:hover {
     }
 
     .control-circle-red {
-        font-size: 1em!important;
+        font-size: 1.5em!important;
         color: #e9ecef;
-        width: 35px!important;
-        height: 35px!important;
+        width: 40px!important;
+        height: 40px!important;
         border-radius: 100%;
         background: #cc1717;
         display: flex;
@@ -1182,6 +1071,10 @@ a.sidebar-link:hover {
       font-size: .95em!important;
     }
 
+    .chart-res canvas{
+      height: 200px!important;
+      width: 400px!important;
+    }
 
     .videoCall {
       background-image: url(images/image-1.png);
@@ -1279,19 +1172,23 @@ a.sidebar-link:hover {
    }
     
 
-   .controls-wrapper {
-    position: absolute!important;
-    bottom: 10px!important;
-    left: 50%!important;
-    transform: translateX(-50%)!important;
-  }
-  
-  .controls {
-    display: flex;
-    gap: 10px!important;
-  }
+    .controls {
+        display: flex;
+        gap: 40px!important;
+        justify-content: center;
+        position: absolute;
+        bottom: 5%;
+        left: 18%!important;
+    }
 
-   
+    .controls-collapsed {
+        display: flex!important;
+        gap: 40px!important;
+        justify-content: center;
+        position: absolute;
+        bottom: 5%;
+        left: 27%!important;
+    }
 
     .control-circle {
         font-size: 1.5em!important;
@@ -1448,26 +1345,17 @@ a.sidebar-link:hover {
 
 
 @media (width >= 1400px) {
-    .content-client {
+    .content {
         width: auto;
     }
-
-    .content-salesman {
-      width: auto;
-  }
 
     .pb-res {
         flex-wrap: nowrap!important;
     }
 
-    .chart-res canvas{
-      height: 230px!important;
-      width: 290px!important;
-    }
-
 }
 
-@media (width <=759px) and (width >=575px){
+@media (width <=575px) {
 
  .pt-res {
     padding-top: 4em!important;
@@ -1491,13 +1379,6 @@ a.sidebar-link:hover {
     font-size: .74em!important;
   }
 
-  .controls-wrapper {
-    position: absolute!important;
-    bottom: 10px!important;
-    left: 50%!important;
-    transform: translateX(-50%)!important;
-  }
-
   .videoCall {
       background-image: url(images/image-1.png);
       min-height: 40vh!important;
@@ -1519,10 +1400,17 @@ a.sidebar-link:hover {
     font-size: .70em!important;
   }
 
- 
+  .controls-collapsed {
+        display: flex!important;
+        gap: 35px!important;
+        justify-content: center;
+        position: absolute;
+        bottom: 5%;
+        left: 8%!important;
+    }
 
     .control-circle {
-        font-size: .88em!important;
+        font-size: 1.5em!important;
         color: #333;
         width: 35px!important;
         height: 35px!important;
@@ -1538,7 +1426,7 @@ a.sidebar-link:hover {
     }
 
     .control-circle-red {
-        font-size: .88em!important;
+        font-size: 1.5em!important;
         color: #e9ecef;
         width: 35px!important;
         height: 35px!important;
@@ -1581,12 +1469,12 @@ a.sidebar-link:hover {
 
 @media (width <=320px) {
 
-  .profile-overlay-salesman video {
+  .profile-overlay video {
     position: absolute;
     top: 0;
-    left: 17px;
-    width: 60px; 
-    height: 50px;
+    left: 10px;
+    width: 70px!important; 
+    height: 60px!important;
   }
 
   .pt-res {
@@ -1632,17 +1520,20 @@ a.sidebar-link:hover {
     font-size: .70em!important;
   }
 
-  .controls-wrapper {
-    position: absolute!important;
-    bottom: 10px!important;
-    left: 50%!important;
-    transform: translateX(-50%)!important;
-  }
+    .controls-collapsed {
+        display: flex!important;
+        gap: 15px!important;
+        justify-content: center;
+        position: absolute;
+        bottom: 5%;
+        left: 6%!important;
+    }
+
     .control-circle {
-        font-size: .77em!important;
+        font-size: 1.5em!important;
         color: #333;
-        width: 30px!important;
-        height: 30px!important;
+        width: 35px!important;
+        height: 35px!important;
         border-radius: 100%;
         background: linear-gradient(
           to right, 
@@ -1655,10 +1546,10 @@ a.sidebar-link:hover {
     }
 
     .control-circle-red {
-        font-size: .77em!important;
+        font-size: 1.5em!important;
         color: #e9ecef;
-        width: 30px!important;
-        height: 30px!important;
+        width: 35px!important;
+        height: 35px!important;
         border-radius: 100%;
         background: #cc1717;
         display: flex;
@@ -1678,7 +1569,7 @@ a.sidebar-link:hover {
 
     .chart-res canvas{
       height: 195px!important;
-      width: 240px!important;
+      width: 220px!important;
     }
 
     .score-res {
@@ -1687,114 +1578,6 @@ a.sidebar-link:hover {
     }
 }
 
-
-@media (width >=320px) and (width <=360px) {
-
-  .profile-overlay-salesman video {
-    position: absolute;
-    top: 0;
-    left: 17px;
-    width: 60px; 
-    height: 50px;
-  }
-
-  .pt-res {
-    padding-top: 4em!important;
-  }
-
-  .pb-res {
-    padding-bottom: 1em!important;
-   }
-    
-  .img-res {
-    width: 250px!important;
-    height: 250px!important;
-  }
-
-  .row-res {
-    display: grid;
-    grid-template-columns: 50% 50%!important;
-  }
-
-  .row-res span {
-    font-size: .74em!important;
-  }
-
-  .videoCall {
-      background-image: url(images/image-1.png);
-      min-height: 30vh!important;
-      background-size: cover;
-      border-radius: 20px;
-      --bs-card-border-color: none!important;
-  }
-
-  .profile-flex {
-    display: grid!important;
-    grid-template-columns: 23% 90%!important;
-  }
-
-  .profile-flex .profile-name {
-    font-size: .89em!important;
-  }
-
-  .profile-flex .profile-name2 {
-    font-size: .70em!important;
-  }
-
-  .controls-wrapper {
-    position: absolute!important;
-    bottom: 10px!important;
-    left: 50%!important;
-    transform: translateX(-50%)!important;
-  }
-    .control-circle {
-        font-size: .77em!important;
-        color: #333;
-        width: 30px!important;
-        height: 30px!important;
-        border-radius: 100%;
-        background: linear-gradient(
-          to right, 
-          rgba(255, 255, 255, 1), 
-          rgba(255, 255, 255, 1)
-        );
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .control-circle-red {
-        font-size: .77em!important;
-        color: #e9ecef;
-        width: 30px!important;
-        height: 30px!important;
-        border-radius: 100%;
-        background: #cc1717;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .speech-res {
-      display: grid!important;
-      grid-template-columns: 10% 90%!important;
-    }
-
-    .chart-res {
-      display: grid!important;
-      grid-template-columns: 90% 10%!important;
-    }
-
-    .chart-res canvas{
-      height: 195px!important;
-      width: 240px!important;
-    }
-
-    .score-res {
-      display: grid!important;
-      grid-template-columns: 50% 50%!important;
-    }
-}
 
 @media (width <=394px) and (width >=360px) {
 
@@ -1828,14 +1611,6 @@ a.sidebar-link:hover {
       --bs-card-border-color: none!important;
   }
 
-  .profile-overlay-salesman video {
-    position: absolute;
-    top: 0;
-    left: 17px;
-    width: 70px; 
-    height: 60px;
-  }
-
   .profile-flex {
     display: grid!important;
     grid-template-columns: 23% 90%!important;
@@ -1849,17 +1624,20 @@ a.sidebar-link:hover {
     font-size: .70em!important;
   }
 
-  .controls-wrapper {
-    position: absolute!important;
-    bottom: 10px!important;
-    left: 50%!important;
-    transform: translateX(-50%)!important;
-  }
+  .controls-collapsed {
+        display: flex!important;
+        gap: 15px!important;
+        justify-content: center;
+        position: absolute;
+        bottom: 5%;
+        left: 13%!important;
+    }
+
     .control-circle {
-        font-size: .77em!important;
+        font-size: 1.5em!important;
         color: #333;
-        width: 30px!important;
-        height: 30px!important;
+        width: 35px!important;
+        height: 35px!important;
         border-radius: 100%;
         background: linear-gradient(
           to right, 
@@ -1872,10 +1650,10 @@ a.sidebar-link:hover {
     }
 
     .control-circle-red {
-        font-size: .77em!important;
+        font-size: 1.5em!important;
         color: #e9ecef;
-        width: 30px!important;
-        height: 30px!important;
+        width: 35px!important;
+        height: 35px!important;
         border-radius: 100%;
         background: #cc1717;
         display: flex;
@@ -1894,8 +1672,8 @@ a.sidebar-link:hover {
     }
 
     .chart-res canvas{
-      height: 190px!important;
-      width: 230px!important;
+      height: 195px!important;
+      width: 220px!important;
     }
 
     .score-res {
@@ -1904,8 +1682,8 @@ a.sidebar-link:hover {
     }
 }
 
-@media (width <=499px) and (width >=399px) {
-  
+@media (width <=418px) and (width >=399px) {
+
   
   .row-res {
     display: grid;
@@ -1937,15 +1715,17 @@ a.sidebar-link:hover {
     font-size: .70em!important;
   }
 
-  .controls-wrapper {
-    position: absolute!important;
-    bottom: 10px!important;
-    left: 50%!important;
-    transform: translateX(-50%)!important;
-  }
+  .controls-collapsed {
+        display: flex!important;
+        gap: 15px!important;
+        justify-content: center;
+        position: absolute;
+        bottom: 5%;
+        left: 13%!important;
+    }
 
     .control-circle {
-        font-size: 1.1em!important;
+        font-size: 1.5em!important;
         color: #333;
         width: 35px!important;
         height: 35px!important;
@@ -1961,7 +1741,7 @@ a.sidebar-link:hover {
     }
 
     .control-circle-red {
-        font-size: 1.1em!important;
+        font-size: 1.5em!important;
         color: #e9ecef;
         width: 35px!important;
         height: 35px!important;
@@ -2026,15 +1806,17 @@ a.sidebar-link:hover {
     font-size: .70em!important;
   }
 
-  .controls-wrapper {
-    position: absolute!important;
-    bottom: 10px!important;
-    left: 50%!important;
-    transform: translateX(-50%)!important;
-  }
+  .controls-collapsed {
+        display: flex!important;
+        gap: 15px!important;
+        justify-content: center;
+        position: absolute;
+        bottom: 5%;
+        left: 24%!important;
+    }
 
     .control-circle {
-        font-size: 1.1em!important;
+        font-size: 1.5em!important;
         color: #333;
         width: 35px!important;
         height: 35px!important;
@@ -2050,7 +1832,7 @@ a.sidebar-link:hover {
     }
 
     .control-circle-red {
-        font-size: 1.1em!important;
+        font-size: 1.5em!important;
         color: #e9ecef;
         width: 35px!important;
         height: 35px!important;
@@ -2113,9 +1895,6 @@ a.sidebar-link:hover {
         align-items: center;
     }
 
-    
-
-
     .control-circle-red {
         font-size: 1.5em!important;
         color: #e9ecef;
@@ -2134,18 +1913,6 @@ a.sidebar-link:hover {
     }
 
     .pb-res {
-        padding-bottom: 2em!important;
+        padding-bottom: 1em!important;
     }
-
-    .profile-overlay-salesman video {
-      position: absolute;
-      top: 0;
-      left: 17px;
-      width: 100px; 
-      height: 90px;
-    }
-
-
-
-    
 }

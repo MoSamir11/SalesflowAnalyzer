@@ -36,8 +36,8 @@ function Dashboard(props) {
 	const peersRef = useRef([]);
 	
 
-	console.log(peers)
-	console.log(ClientPeers)
+	//console.log(peers)
+	//console.log(ClientPeers)
 	
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [ email, setEmail ] = useState(searchParams.get('email'))
@@ -155,27 +155,16 @@ function Dashboard(props) {
 		}
 	}, [person])
 
-	/*
 	useEffect(() => {
-		console.log("Here in ClientPeer Useeffect", ClientPeers.length)
+		
 		if(ClientPeers.length > 0){
-			/*
 			ClientPeers[0].on("stream", (stream) => {
 				console.log(stream)
-				clientVideoStream.current.srcObject = stream;
+				clientVideoStream.current.srcObject = ref;
 			})
-			*/
-			/*
-			ClientPeers.map((peer) => {
-				peer.on("stream", stream => {
-					console.log("Here in ClientPeer Useeffect Peer", stream)
-					clientVideoStream.current.srcObject = stream;
-				})
-			}, [])
+			
 		}
 	}, [ClientPeers])
-	*/
-	
 
   	useEffect( () => {
 		socketRef.current = io.connect("http://localhost:3001");
@@ -200,11 +189,10 @@ function Dashboard(props) {
 					}
 					else if(obj.role == "Client"){
 						client_peers.push(peer);
-						//delay(3000)
-						//loadModels()
+						delay(3000)
+						loadModels()
 					}
                 })
-
                 setPeers(peers);
 				setClientPeers(client_peers);
             })
@@ -220,8 +208,8 @@ function Dashboard(props) {
 				}
 				else if(payload.role == "Client"){
 					setClientPeers(users => [...users, peer]);
-					//delay(3000)
-					//loadModels()
+					delay(3000)
+					loadModels()
 				}
             });
 
@@ -330,13 +318,11 @@ function Dashboard(props) {
         return peer;
     }
 	
-	
 	const Video = (props) => {
 		const ref = useRef();
 	
 		useEffect(() => {
 			props.peer.on("stream", stream => {
-				console.log("Hi", stream)
 				ref.current.srcObject = stream;
 			})
 		}, []);
@@ -352,43 +338,14 @@ function Dashboard(props) {
 		useEffect(() => {
 			props.peer.on("stream", stream => {
 				ref.current.srcObject = stream;
+				if(clientVideoStream.current){
+					clientVideoStream.current.srcObject = stream;
+				}
 			})
 		}, []);
 	
 		return (
 			<video playsInline  ref={ref} autoPlay></video>
-		);
-	}
-
-	const ClientVideo1 = (props) => {
-		const ref = useRef();
-	
-		useEffect(() => {
-			props.peer.on("stream", stream => {
-				ref.current.srcObject = stream;
-			})
-		}, []);
-	
-		return (
-			<div class = "client-video-1" >
-				<video playsInline  ref={ref} autoPlay></video>
-			</div>
-		);
-	}
-
-	const ClientVideo2 = (props) => {
-		const ref = useRef();
-	
-		useEffect(() => {
-			props.peer.on("stream", stream => {
-				ref.current.srcObject = stream;
-			})
-		}, []);
-	
-		return (
-			<div class = "client-video-2" >
-				<video playsInline  ref={ref} autoPlay></video>
-			</div>
 		);
 	}
 
@@ -636,23 +593,21 @@ function Dashboard(props) {
 	}
 
 	const loadModels = () => {
-		if(person == "SalesPerson"){
-			Promise.all([
-			faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-			faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-			faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
-			faceapi.nets.faceExpressionNet.loadFromUri('/models'),
-			]).then(() => {
-			faceDetection();
-			})
-		}
+		Promise.all([
+		  faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+		  faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+		  faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
+		  faceapi.nets.faceExpressionNet.loadFromUri('/models'),
+		]).then(() => {
+		  faceDetection();
+		})
 	}
 
 	const faceDetection = async () => {
 		let interval = setInterval(async() => {
 			console.log(clientVideoStream.current)
-			if(userVideo.current){
-				const detections = await faceapi.detectAllFaces(userVideo.current, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions();
+			if(clientVideoStream.current){
+				const detections = await faceapi.detectAllFaces(clientVideoStream.current, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions();
 
 				if(detections){
 					if(detections.length > 0){
@@ -868,25 +823,19 @@ function Dashboard(props) {
 									<div className="row">
 										<div className="col-lg-12 col-md-12 col-sm-12">
 											<div className="card">
-
-												<div className="salesman-video-container">
+												<div className="video-container">
 													<div className="salesman-video">
-														{
-															(ClientPeers.length == 1) &&
-															<Video peer={ClientPeers[0]} />
-														}
+														{ClientPeers.map((peer, index) => {
+															return (
+																<ClientVideo key={index} peer={peer} />
+															);
+														})}
 													</div>
 													<div className="profile-overlay-salesman">
 														{
 															userVideo &&
 															<video playsInline muted ref={userVideo} autoPlay loop>
 															</video>
-														}
-													</div>
-													<div className="profile-overlay-salesman-2">
-														{
-															(peers.length == 1) &&
-															<Video peer={peers[0]} />
 														}
 													</div>
 												</div>
@@ -1008,21 +957,15 @@ function Dashboard(props) {
 									<div className="row pt-3">
 										<div className="col-lg-12 col-md-12 col-sm-12">
 											<div className="card">
-												
-												<div class="client-video-container">
-													{
-														(peers.length == 1) &&
-														<ClientVideo1 peer={peers[0]} />
-													}
-													{
-														(peers.length == 2) &&
-														<>
-																<ClientVideo1 peer={peers[0]} />
-																<ClientVideo2 peer={peers[1]} />
-														</>
-													}
-													
-													<div class="profile-overlay-client">
+												<div className="video-container">
+													<div className="client-video">
+														{peers.map((peer, index) => {
+															return (
+																<Video key={index} peer={peer} />
+															);
+														})}
+													</div>
+													<div className="profile-overlay-client">
 														{
 															userVideo &&
 															<video playsInline muted ref={userVideo} autoPlay loop>
@@ -1030,7 +973,6 @@ function Dashboard(props) {
 														}
 													</div>
 												</div>
-
 												<div className="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
 													<div className="controls-client">
 														<button className="btn control-circle-client">

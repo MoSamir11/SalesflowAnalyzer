@@ -79,8 +79,8 @@ li {
   .control-circle-client {
       font-size: 1.5em;
       color: #333;
-      width: 50px!important;
-      height: 50px!important;
+      width: 50px;
+      height: 50px;
       border-radius: 100%;
       background: linear-gradient(
         to right, 
@@ -95,8 +95,8 @@ li {
   .control-circle-red-client {
       font-size: 1.5em;
       color: #e9ecef;
-      width: 50px!important;
-      height: 50px!important;
+      width: 50px;
+      height: 50px;
       border-radius: 100%;
       background: #cc1717;
       display: flex;
@@ -127,7 +127,7 @@ main {
     max-width: 264px;
     min-width: 264px;
     transition: all 0.35s ease-in-out;
-    box-shadow: 0 0 35px 0 rgba(49, 57, 66, 0.5);
+    box-shadow: 0 0 15px 0 rgba(49, 57, 66, 0.5);
     z-index: 1111;
     background: rgba(0, 0, 0, 0.9);
 }
@@ -160,11 +160,19 @@ main {
 }
 
 
-.video-container {
+.salesman-video-container {
     position: relative;
     padding-bottom: 50.25%;
     border-radius: 10px;
     overflow: hidden;
+}
+
+.client-video-container {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  height: 450px;
 }
 
 .salesman-video video {
@@ -177,8 +185,8 @@ main {
     object-fit: cover;
 }
 
-.client-video video{
-  position: absolute;
+.client-video-1 video{
+  /* position: absolute; */
   top: 0;
   left: 0;
   width: 100%;
@@ -186,6 +194,17 @@ main {
   border-radius: inherit; 
   object-fit: cover;
 }
+
+.client-video-2 video{
+  /* position: absolute; */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit; 
+  object-fit: cover;
+}
+
 
 .profile-overlay-client video {
   position: absolute;
@@ -199,7 +218,15 @@ main {
   position: absolute;
   top: 0;
   left: 17px;
-  width: 90px; 
+  width: 80px; 
+  height: 70px;
+}
+
+.profile-overlay-salesman-2 video {
+  position: absolute;
+  top: 60px;
+  left: 17px;
+  width: 80px; 
   height: 70px;
 }
 
@@ -689,6 +716,22 @@ a.sidebar-link:hover {
 /* Responsive */
 
 @media (width >= 1700px ) {
+
+  .profile-overlay-salesman-2 video {
+    position: absolute!important;
+    top: 60px!important;
+    left: 17px!important;
+    width: 100px!important; 
+    height: 100px!important;
+  }
+
+  .profile-overlay-salesman video {
+    position: absolute!important;
+    top: 0!important;
+    left: 17px!important;
+    width: 100px!important; 
+    height: 90px!important;
+  }
     .content-client {
         width: auto;
     }
@@ -710,10 +753,10 @@ a.sidebar-link:hover {
   }
 
     .control-circle {
-        font-size: 2em;
-        color: #333;
-        width: 70px;
-        height: 70px;
+        font-size: 1.5em!important;
+        color: #333!important;
+        width: 60px!important;
+        height: 60px!important;
         border-radius: 100%;
         background: linear-gradient(
           to right, 
@@ -726,10 +769,10 @@ a.sidebar-link:hover {
     }
 
     .control-circle-red {
-        font-size: 2em;
-        color: #e9ecef;
-        width: 70px;
-        height: 70px;
+        font-size: 1,5em!important;
+        color: #e9ecef!important;
+        width: 60px!important;
+        height: 60px!important;
         border-radius: 100%;
         background: #cc1717;
         display: flex;
@@ -821,6 +864,21 @@ a.sidebar-link:hover {
 }
 
 @media (width >= 1200px ) and (width <=1299px) {
+
+  .profile-overlay-salesman video {
+    position: absolute!important;
+    top: 0!important;
+    left: 17px!important;
+    width: 80px!important; 
+    height: 70px!important;
+  }
+  .profile-overlay-salesman-2 video {
+    position: absolute!important;
+    top: 60px!important;
+    left: 17px!important;
+    width: 80px!important; 
+    height: 60px!important;
+  }
     .content-client {
         width: auto;
     }
@@ -962,6 +1020,21 @@ a.sidebar-link:hover {
 }
 
 @media (width <= 1399px ) and (width >= 1299px ) {
+
+  .profile-overlay-salesman video {
+    position: absolute!important;
+    top: 0!important;
+    left: 17px!important;
+    width: 80px!important; 
+    height: 70px!important;
+  }
+  .profile-overlay-salesman-2 video {
+    position: absolute!important;
+    top: 60px!important;
+    left: 17px!important;
+    width: 80px!important; 
+    height: 70px!important;
+  }
     .content-client {
         width: auto;
     }
@@ -983,7 +1056,7 @@ a.sidebar-link:hover {
   }
 
     .control-circle {
-        font-size: 1.4em;
+        font-size: 1.3em;
         color: #333;
         width: 50px;
         height: 50px;
@@ -999,7 +1072,7 @@ a.sidebar-link:hover {
     }
 
     .control-circle-red {
-        font-size: 1.4em;
+        font-size: 1.3em;
         color: #e9ecef;
         width: 50px;
         height: 50px;
@@ -1087,6 +1160,21 @@ a.sidebar-link:hover {
 
 @media (width >= 1024px ) and (width <=1199px) {
 
+  .profile-overlay-salesman video {
+    position: absolute!important;
+    top: 0!important;
+    left: 17px!important;
+    width: 60px!important; 
+    height: 50px!important;
+  }
+  .profile-overlay-salesman-2 video {
+    position: absolute!important;
+    top: 50px!important;
+    left: 17px!important;
+    width: 60px!important; 
+    height: 40px!important;
+  }
+
     .content-client {
           width: auto;
       }
@@ -1108,8 +1196,8 @@ a.sidebar-link:hover {
       position: absolute;
       top: 0;
       left: 17px;
-      width: 70px; 
-      height: 60px;
+      width: 80px; 
+      height: 80px;
     }
 
     .controls-wrapper {
@@ -1269,6 +1357,21 @@ a.sidebar-link:hover {
 
 
 @media (width <= 999px) {
+
+  .profile-overlay-salesman video {
+    position: absolute!important;
+    top: 0!important;
+    left: 17px!important;
+    width: 120px!important; 
+    height: 110px!important;
+  }
+  .profile-overlay-salesman-2 video {
+    position: absolute!important;
+    top: 70px!important;
+    left: 17px!important;
+    width: 120px!important; 
+    height: 120px!important;
+  }
     
   .pt-res {
     padding-top: 6em!important;
@@ -1296,8 +1399,8 @@ a.sidebar-link:hover {
     .control-circle {
         font-size: 1.5em!important;
         color: #333;
-        width: 40px!important;
-        height: 40px!important;
+        width: 60px!important;
+        height: 60px!important;
         border-radius: 100%;
         background: linear-gradient(
           to right, 
@@ -1312,8 +1415,8 @@ a.sidebar-link:hover {
     .control-circle-red {
         font-size: 1.5em!important;
         color: #e9ecef;
-        width: 40px!important;
-        height: 40px!important;
+        width: 60px!important;
+        height: 60px!important;
         border-radius: 100%;
         background: #cc1717;
         display: flex;
@@ -1321,9 +1424,7 @@ a.sidebar-link:hover {
         align-items: center;
     }
 
-    .row-res span {
-      
-    }
+    
 
     .speech-res .s-title {
       font-size: .88em!important;
@@ -1448,6 +1549,22 @@ a.sidebar-link:hover {
 
 
 @media (width >= 1400px) {
+
+  .profile-overlay-salesman-2 video {
+    position: absolute!important;
+    top: 60px!important;
+    left: 17px!important;
+    width: 90px!important; 
+    height: 90px!important;
+  }
+
+  .profile-overlay-salesman video {
+    position: absolute!important;
+    top: 0!important;
+    left: 17px!important;
+    width: 90px!important; 
+    height: 80px!important;
+  }
     .content-client {
         width: auto;
     }
@@ -1464,10 +1581,74 @@ a.sidebar-link:hover {
       height: 230px!important;
       width: 290px!important;
     }
+    
+    .control-circle {
+      font-size: 1.2em!important;
+      color: #333;
+      width: 40px!important;
+      height: 40px!important;
+      border-radius: 100%;
+      background: linear-gradient(
+        to right, 
+        rgba(255, 255, 255, 1), 
+        rgba(255, 255, 255, 1)
+      );
+      display: flex;
+      justify-content: center;
+      align-items: center;
+  }
+
+  .control-circle-red {
+      font-size: 1.2em!important;
+      color: #e9ecef;
+      width: 40px!important;
+      height: 40px!important;
+      border-radius: 100%;
+      background: #cc1717;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+  }
 
 }
 
 @media (width <=759px) and (width >=575px){
+
+
+  .client-video-container {
+    position: relative!important;
+    border-radius: 10px!important;
+    overflow: hidden!important;
+  }
+
+  .controls-client {
+    display: flex;
+    gap: 15px!important;
+  }
+
+  .profile-overlay-client video {
+    position: absolute;
+    top: 0;
+    left: 17px;
+    width: 110px!important;
+    height: 100px!important;
+}
+
+  .client-video-container {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    height: 400px!important;
+  }
+
+  .profile-overlay-salesman-2 video {
+    position: absolute;
+    top: 60px;
+    left: 17px;
+    width: 90px; 
+    height: 70px;
+  }
 
  .pt-res {
     padding-top: 4em!important;
@@ -1581,11 +1762,40 @@ a.sidebar-link:hover {
 
 @media (width <=320px) {
 
+  .client-video-container {
+    position: relative!important;
+    border-radius: 10px!important;
+    overflow: hidden!important;
+    display: grid!important;
+    height: 100%!important;
+  }
+
+  .controls-client {
+    display: flex!important;
+    gap: 15px!important;
+  }
+
+  .profile-overlay-client video {
+    position: absolute!important;
+    top: 0!important;
+    left: 17px!important;
+    width: 110px!important;
+    height: 100px!important;
+}
+
+  .profile-overlay-salesman-2 video {
+    position: absolute;
+    top: 60px;
+    left: 17px;
+    width: 50px; 
+    height: 50px;
+  }
+
   .profile-overlay-salesman video {
     position: absolute;
     top: 0;
     left: 17px;
-    width: 60px; 
+    width: 50px; 
     height: 50px;
   }
 
@@ -1639,7 +1849,7 @@ a.sidebar-link:hover {
     transform: translateX(-50%)!important;
   }
     .control-circle {
-        font-size: .77em!important;
+        font-size: .88em!important;
         color: #333;
         width: 30px!important;
         height: 30px!important;
@@ -1655,7 +1865,7 @@ a.sidebar-link:hover {
     }
 
     .control-circle-red {
-        font-size: .77em!important;
+        font-size: .88em!important;
         color: #e9ecef;
         width: 30px!important;
         height: 30px!important;
@@ -1688,14 +1898,67 @@ a.sidebar-link:hover {
 }
 
 
-@media (width >=320px) and (width <=360px) {
+@media (width >=320px) and (width <=365px) {
 
-  .profile-overlay-salesman video {
+.control-circle-client {
+    font-size: 1.2em!important;
+    color: #333!important;
+    width: 40px!important;
+    height: 40px!important;
+    border-radius: 100%!important;
+    background: linear-gradient( to right, rgba(255, 255, 255, 1), rgba(255, 255, 255, 1) )!important;
+    display: flex!important;
+    justify-content: center!important;
+    align-items: center!important;
+}
+
+.control-circle-red-client {
+  font-size: 1.2em!important;
+  color: #e9ecef;
+  width: 40px!important;
+  height: 40px!important;
+  border-radius: 100%;
+  background: #cc1717;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+  .client-video-container {
+    position: relative!important;
+    border-radius: 10px!important;
+    overflow: hidden!important;
+    display: grid!important;
+    height: 100%!important;
+  }
+
+  .controls-client {
+    display: flex;
+    gap: 10px!important;
+  }
+
+  .profile-overlay-client video {
     position: absolute;
     top: 0;
     left: 17px;
-    width: 60px; 
-    height: 50px;
+    width: 110px!important;
+    height: 100px!important;
+}
+
+  .profile-overlay-salesman-2 video {
+    position: absolute!important;
+    top: 40px!important;
+    left: 17px!important;
+    width: 50px!important; 
+    height: 40px!important;
+  }
+
+  .profile-overlay-salesman video {
+    position: absolute!important;
+    top: 0!important;
+    left: 17px!important;
+    width: 50px!important; 
+    height: 50px!important;
   }
 
   .pt-res {
@@ -1747,33 +2010,6 @@ a.sidebar-link:hover {
     left: 50%!important;
     transform: translateX(-50%)!important;
   }
-    .control-circle {
-        font-size: .77em!important;
-        color: #333;
-        width: 30px!important;
-        height: 30px!important;
-        border-radius: 100%;
-        background: linear-gradient(
-          to right, 
-          rgba(255, 255, 255, 1), 
-          rgba(255, 255, 255, 1)
-        );
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .control-circle-red {
-        font-size: .77em!important;
-        color: #e9ecef;
-        width: 30px!important;
-        height: 30px!important;
-        border-radius: 100%;
-        background: #cc1717;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
 
     .speech-res {
       display: grid!important;
@@ -1797,6 +2033,72 @@ a.sidebar-link:hover {
 }
 
 @media (width <=394px) and (width >=360px) {
+
+
+  .control-circle {
+    font-size: 1.1em!important;
+    color: #333;
+    width: 35px!important;
+    height: 35px!important;
+    border-radius: 100%;
+    background: linear-gradient(
+      to right, 
+      rgba(255, 255, 255, 1), 
+      rgba(255, 255, 255, 1)
+    );
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.control-circle-red {
+    font-size: 1.1em!important;
+    color: #e9ecef;
+    width: 35px!important;
+    height: 35px!important;
+    border-radius: 100%;
+    background: #cc1717;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+  .client-video-container {
+    position: relative!important;
+    border-radius: 10px!important;
+    overflow: hidden!important;
+    display: grid!important;
+    height: 100%!important;
+  }
+
+  .controls-client {
+    display: flex;
+    gap: 10px!important;
+  }
+
+  .profile-overlay-client video {
+    position: absolute;
+    top: 0;
+    left: 17px;
+    width: 110px!important;
+    height: 100px!important;
+}
+
+  .profile-overlay-salesman-2 video {
+    position: absolute!important;
+    top: 40px!important;
+    left: 17px!important;
+    width: 60px!important; 
+    height: 60px!important;
+  }
+
+  .profile-overlay-salesman video {
+    position: absolute!important;
+    top: 0!important;
+    left: 17px!important;
+    width: 60px!important; 
+    height: 60px!important;
+  }
 
   .pt-res {
     padding-top: 4em!important;
@@ -1832,7 +2134,7 @@ a.sidebar-link:hover {
     position: absolute;
     top: 0;
     left: 17px;
-    width: 70px; 
+    width: 60px; 
     height: 60px;
   }
 
@@ -1855,33 +2157,29 @@ a.sidebar-link:hover {
     left: 50%!important;
     transform: translateX(-50%)!important;
   }
-    .control-circle {
-        font-size: .77em!important;
-        color: #333;
-        width: 30px!important;
-        height: 30px!important;
-        border-radius: 100%;
-        background: linear-gradient(
-          to right, 
-          rgba(255, 255, 255, 1), 
-          rgba(255, 255, 255, 1)
-        );
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
+  .control-circle-client {
+    font-size: 1.3em!important;
+    color: #333!important;
+    width: 50px!important;
+    height: 50px!important;
+    border-radius: 100%!important;
+    background: linear-gradient( to right, rgba(255, 255, 255, 1), rgba(255, 255, 255, 1) )!important;
+    display: flex!important;
+    justify-content: center!important;
+    align-items: center!important;
+}
 
-    .control-circle-red {
-        font-size: .77em!important;
-        color: #e9ecef;
-        width: 30px!important;
-        height: 30px!important;
-        border-radius: 100%;
-        background: #cc1717;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
+.control-circle-red-client {
+  font-size: 1.3em!important;
+  color: #e9ecef;
+  width: 50px!important;
+  height: 50px!important;
+  border-radius: 100%;
+  background: #cc1717;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
     .speech-res {
       display: grid!important;
@@ -1905,6 +2203,35 @@ a.sidebar-link:hover {
 }
 
 @media (width <=499px) and (width >=399px) {
+
+  .client-video-container {
+    position: relative!important;
+    border-radius: 10px!important;
+    overflow: hidden!important;
+    display: grid!important;
+    height: 100%!important;
+  }
+
+  .controls-client {
+    display: flex;
+    gap: 15px!important;
+  }
+
+  .profile-overlay-client video {
+    position: absolute;
+    top: 0;
+    left: 17px;
+    width: 110px!important;
+    height: 100px!important;
+}
+
+  .profile-overlay-salesman-2 video {
+    position: absolute;
+    top: 60px;
+    left: 17px;
+    width: 90px; 
+    height: 70px;
+  }
   
   
   .row-res {
@@ -1994,7 +2321,37 @@ a.sidebar-link:hover {
 }
 
 
-@media (width <=540px) and (width >=499px) {
+@media (width <=574px) and (width >=499px) {
+
+
+  .client-video-container {
+    position: relative!important;
+    border-radius: 10px!important;
+    overflow: hidden!important;
+    display: grid!important;
+    height: 100%!important;
+  }
+
+  .controls-client {
+    display: flex;
+    gap: 15px!important;
+  }
+
+  .profile-overlay-client video {
+    position: absolute;
+    top: 0;
+    left: 17px;
+    width: 110px!important;
+    height: 100px!important;
+}
+
+  .profile-overlay-salesman-2 video {
+    position: absolute;
+    top: 60px;
+    left: 17px;
+    width: 90px; 
+    height: 70px;
+  }
 
   .row-res {
     display: grid;
@@ -2089,6 +2446,15 @@ a.sidebar-link:hover {
 
 @media (width <=823px) and (width >=760px) {
 
+
+  .profile-overlay-salesman-2 video {
+    position: absolute;
+    top: 60px;
+    left: 17px;
+    width: 100px; 
+    height: 90px;
+  }
+
   .videoCall {
       background-image: url(images/image-1.png);
       min-height: 30vh!important;
@@ -2145,7 +2511,97 @@ a.sidebar-link:hover {
       height: 90px;
     }
 
+    .client-video-container {
+      position: relative!important;
+      border-radius: 10px!important;
+      overflow: hidden!important;
+    }
+  
+    .controls-client {
+      display: flex;
+      gap: 15px!important;
+    }
+  
+    .profile-overlay-client video {
+      position: absolute;
+      top: 0;
+      left: 17px;
+      width: 110px!important;
+      height: 100px!important;
+  }
 
 
     
+}
+
+@media (width < 426px) and (width >=399px){
+
+
+  .control-circle {
+    font-size: 1.1em!important;
+    color: #333;
+    width: 40px!important;
+    height: 40px!important;
+    border-radius: 100%;
+    background: linear-gradient(
+      to right, 
+      rgba(255, 255, 255, 1), 
+      rgba(255, 255, 255, 1)
+    );
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .control-circle-red {
+    font-size: 1.1em!important;
+    color: #e9ecef;
+    width: 40px!important;
+    height: 40px!important;
+    border-radius: 100%;
+    background: #cc1717;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .profile-overlay-salesman-2 video {
+    position: absolute!important;
+    top: 40px!important;
+    left: 17px!important;
+    width: 60px!important; 
+    height: 50px!important;
+  }
+
+  .profile-overlay-salesman video {
+    position: absolute!important;
+    top: 0!important;
+    left: 17px!important;
+    width: 60px!important; 
+    height: 50px!important;
+  }
+
+  .client-video-container {
+    position: relative!important;
+    border-radius: 10px!important;
+    overflow: hidden!important;
+    display: grid!important;
+    height: 100%!important;
+  }
+
+  .controls-client {
+    display: flex;
+    gap: 15px!important;
+  }
+
+  .profile-overlay-client video {
+    position: absolute!important;
+    top: 0;
+    left: 17px;
+    width: 110px!important;
+    height: 100px!important;
+  }
+
+
+  
 }

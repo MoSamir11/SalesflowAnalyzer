@@ -372,12 +372,12 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
             socketToRoom[socket.id] = roomID;
             //const usersInThisRoom = users[roomID].filter(id => id !== socket.id);
             const usersInThisRoom = users[roomID].filter(obj => obj.id !== socket.id);
-            //console.log(usersInThisRoom)
+            console.log(usersInThisRoom)
             socket.emit("all users", usersInThisRoom);
         });
     
         socket.on("sending signal", payload => {
-            console.log(payload)
+            //console.log(payload)
             io.to(payload.userToSignal).emit('user joined', { signal: payload.signal, callerID: payload.callerID, role: payload.person });
         });
     
