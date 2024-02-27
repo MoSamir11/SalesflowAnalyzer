@@ -133,7 +133,7 @@ main {
 }
 
 .fixed {
-  margin-left: 265px;
+  /*margin-left: 265px;*/
   transition: margin 0.3s ease;
 }
 

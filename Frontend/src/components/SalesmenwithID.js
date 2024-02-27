@@ -59,6 +59,10 @@ function SalesmenWithID() {
 					        <i className="bi bi-camera-video me-2"></i>Call
 					    </button>
 
+              <button type="button" className="btn text-white bg-dark" onClick={() => { navigate(`/dealer/${id}`)}}>
+					        <i className="bi bi-camera-video me-2"></i>Join as Dealer
+					    </button>
+                &nbsp;
               <button type="button" className="btn text-white bg-dark" onClick={() => { navigate(`/${id}`)}}>
 					        <i className="bi bi-camera-video me-2"></i>Join as Client
 					    </button>

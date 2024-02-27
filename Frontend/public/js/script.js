@@ -59,7 +59,7 @@ $(document).ready(function() {
 
 
 // Circular Progress bar 1 //
-
+/*
 $(document).ready(function() {
 
     let $progressBars = $(".circular-progress");
@@ -109,7 +109,7 @@ $(document).ready(function() {
         }, speed2);
     });
 });
-
+*/
 
 $(document).ready(function(){
 
@@ -204,7 +204,7 @@ $(document).ready(function(){
 
   // progress bar
 
-
+    /*
     $(".bar").each(function() {
         var $bar = $(this);
         var label = $bar.data("label");
@@ -217,10 +217,12 @@ $(document).ready(function(){
 
         $bar.html(labelHtml + barHtml + valueHtml);
     });
+    */
 });
 
 
 $(document).ready(function() {
+    /*
     $("#copyButton").click(function() {
         var textToCopy = $(this).data("text-to-copy");
 
@@ -238,6 +240,7 @@ $(document).ready(function() {
             copyToast.hide();
         }, 2000);
     });
+    */
 
 
     function enableScrollOnMobile() {

@@ -20,7 +20,7 @@ import { getRelativePosition } from 'chart.js/helpers';
 //const authorizationEndpoint = "http://localhost:3001/api/get-speech-token";
 const authorizationEndpoint = "https://facial-emotion-recognition-backend-dev-v3.azurewebsites.net/api/get-speech-token";
 let subscriptionKey = "b728cec31ab14a2da7749569701f599d"
-let openai_subscription_key = "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"
+let openai_subscription_key = "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"
 let conversation_history = ""
 
 function Dashboard(props) {
@@ -155,16 +155,17 @@ function Dashboard(props) {
 		}
 	}, [person])
 
+
+	/*
 	useEffect(() => {
-		
 		if(ClientPeers.length > 0){
 			ClientPeers[0].on("stream", (stream) => {
 				console.log(stream)
-				clientVideoStream.current.srcObject = ref;
+				clientVideoStream.current.srcObject = stream;
 			})
-			
 		}
 	}, [ClientPeers])
+	*/
 
   	useEffect( () => {
 		socketRef.current = io.connect("http://localhost:3001");
@@ -337,6 +338,7 @@ function Dashboard(props) {
 	
 		useEffect(() => {
 			props.peer.on("stream", stream => {
+				console.log("Stream", stream)
 				ref.current.srcObject = stream;
 				if(clientVideoStream.current){
 					clientVideoStream.current.srcObject = stream;

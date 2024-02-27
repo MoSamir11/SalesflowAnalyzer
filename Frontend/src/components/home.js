@@ -22,7 +22,7 @@ function Home() {
     var body= document.getElementsByTagName('body')[0];
     var script= document.createElement('script');
     script.src= '/js/script-index.js';
-    body.appendChild(script);
+    //body.appendChild(script);
 	}, [])
 
   const JoinRoom = async () => {
@@ -60,6 +60,10 @@ function Home() {
 
               <button type="button" className="btn text-white bg-dark" onClick={() => { navigate(`/salesmen`)}}>
 					        <i className="bi bi-camera-video me-2"></i>Join as Salesmen
+					    </button>
+                &nbsp;
+              <button type="button" className="btn text-white bg-dark" onClick={() => { navigate(`/dealer`)}}>
+					        <i className="bi bi-camera-video me-2"></i>Join as Dealer
 					    </button>
 				    </div>
         	</div>

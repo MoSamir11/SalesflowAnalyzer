@@ -62,6 +62,10 @@ function HomeWithID() {
               <button type="button" className="btn text-white bg-dark" onClick={() => { navigate(`/salesmen/${id}`)}}>
 					        <i className="bi bi-camera-video me-2"></i>Join as Salesmen
 					    </button>
+                &nbsp;
+              <button type="button" className="btn text-white bg-dark" onClick={() => { navigate(`/dealer/${id}`)}}>
+					        <i className="bi bi-camera-video me-2"></i>Join as Dealer
+					    </button>
 				    </div>
         	</div>
         </div>

@@ -9,8 +9,8 @@ export const useSocket = () => {
 };
 
 export const SocketProvider = (props) => {
-  const socket = useMemo(() => io("http://localhost:3001"), []);
-  //const socket = useMemo(() => io("https://facial-emotion-recognition-backend-dev-v2.azurewebsites.net"), []);
+  //const socket = useMemo(() => io("http://localhost:3001"), []);
+  const socket = useMemo(() => io("https://facial-emotion-recognition-backend-dev-v3.azurewebsites.net"), []);
 
   return (
     <SocketContext.Provider value={socket}>

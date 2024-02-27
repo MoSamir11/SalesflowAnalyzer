@@ -32,7 +32,7 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
     const server = http.createServer(app)
     const io = require("socket.io")(server, {
         cors: {
-            origin: ["https://facial-emotion-recognition-dev-v2.azurewebsites.net", "http://localhost:3000"],
+            origin: ["https://facial-emotion-recognition-dev-v2.azurewebsites.net", "http://localhost:3000", "https://facial-emotion-recognition-dev-v3.azurewebsites.net"],
             methods: [ "GET", "POST" ]
         }
     })
@@ -370,6 +370,7 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
                 users[roomID] = [{"id": socket.id, "email" : email, "role" : person}];
             }
             socketToRoom[socket.id] = roomID;
+            socket.join(roomID);
             //const usersInThisRoom = users[roomID].filter(id => id !== socket.id);
             const usersInThisRoom = users[roomID].filter(obj => obj.id !== socket.id);
             console.log(usersInThisRoom)
@@ -386,17 +387,25 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
         });
 
         socket.on("sendMSG", (data) => {
-            //console.log(data)
-            io.to(data.to).emit("sendMSGToSalesmen", { to: data.to, message : data.message })
+            console.log(data)
+            //io.to(data.to).emit("sendMSGToSalesmen", { to: data.to, message : data.message })
+            //socket.emit("sendMSGToSalesmen", { to: data.to, message : data.message });
+            //socket.broadcast.emit("sendMSGToSalesmen", { to: data.to, message : data.message })
+            // sending to all clients in 'game' room, including sender
+            io.in(data.to).emit("sendMSGToSalesmen", { to: data.to, message : data.message });
         })
     
-        socket.on('disconnect', () => {
+        socket.on('disconnectUser', async () => {
             const roomID = socketToRoom[socket.id];
             let room = users[roomID];
             if (room) {
-                room = room.filter(id => id !== socket.id);
+                room = room.filter(obj => obj.id !== socket.id);
+                console.log(room)
                 users[roomID] = room;
             }
+            //io.sockets.socket(socket.id).disconnect();
+            //io.sockets.connected[socket.id].disconnect()
+            socket.leave(room)
         });
     
     });

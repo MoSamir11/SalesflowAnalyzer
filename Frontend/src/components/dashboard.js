@@ -1,43 +1,102 @@
-import $ from 'jquery';
+
 import React, { useEffect, useRef, useState } from "react"
-import Navbar from './navbar.js'
-import Header from './header.js'
 import {useLocation, useParams, useSearchParams} from 'react-router-dom';
 import Peer from "simple-peer"
+import io from "socket.io-client"
+
+import Navbar from './navbar.js'
+import Header from './header.js'
+import OpenAI from 'openai';
+import $ from 'jquery';
 import * as faceapi from "face-api.js";
 import axios from "axios";
-import OpenAI from 'openai';
-import io from "socket.io-client"
 import { isWithGender } from 'face-api.js';
 import Chart from 'chart.js/auto';
 import { getRelativePosition } from 'chart.js/helpers';
+
+
+
 //V-1.11
 //loadModels(); & doContinuousRecognition(); These functions need to be called for SalesPerson
 //doContinuousRecognition() need to be called for Client
 //onRecognizedResult() for Client needs to be handled
+	
+	const Video = (props) => {
+		const ref = useRef();
+	
+		useEffect(() => {
+			props.peer.on("stream", stream => {
+				console.log("Hi", stream)
+				ref.current.srcObject = stream;
+			})
+		}, []);
+	
+		return (
+			<video playsInline  ref={ref} autoPlay></video>
+		);
+	}	
 
+	const ClientVideo1 = (props) => {
+		const ref = useRef();
+	
+		useEffect(() => {
+			props.peer.on("stream", stream => {
+				ref.current.srcObject = stream;
+			})
 
-//const authorizationEndpoint = "http://localhost:3001/api/get-speech-token";
-const authorizationEndpoint = "https://facial-emotion-recognition-backend-dev-v3.azurewebsites.net/api/get-speech-token";
-let subscriptionKey = "b728cec31ab14a2da7749569701f599d"
-let openai_subscription_key = "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"
-let conversation_history = ""
+			var body= document.getElementsByTagName('body')[0];
+			var link= document.createElement('link');
+			link.src= '/css/style.css';
+			//body.appendChild(link)
+		}, []);
+	
+		return (
+			<div className="client-video-1" >
+				<video playsInline  ref={ref} autoPlay></video>
+			</div>
+		);
+	}
 
-function Dashboard(props) {
+	const ClientVideo2 = (props) => {
+		const ref = useRef();
+	
+		useEffect(() => {
+			props.peer.on("stream", stream => {
+				ref.current.srcObject = stream;
+			})
+		}, []);
+	
+		return (
+			<div className = "client-video-2" >
+				<video playsInline  ref={ref} autoPlay></video>
+			</div>
+		);
+	}
+
+function Dashboard() {
 
 	const { chatroom } = useParams(); 
 	const [ roomID, setRoomID ] = useState(chatroom)
 
 	const [peers, setPeers] = useState([]);
 	const [ClientPeers, setClientPeers] = useState([]);
+	const [DealerPeers, setDealerPeers] = useState([]);
 	const socketRef = useRef();
 	const userVideo = useRef();
-	const clientVideoStream = useRef();
+	const clientVideo = useRef({});
+	const salespersonVideo = useRef({});
+	const dealerVideo = useRef({});
+	const [salespersonSocketId, setSalespersonSocketId] = useState("");
 	const peersRef = useRef([]);
+
+	const authorizationEndpoint = "https://facial-emotion-recognition-backend-dev-v3.azurewebsites.net/api/get-speech-token";
+	let subscriptionKey = "b728cec31ab14a2da7749569701f599d"
+	let openai_subscription_key = "ENTER YOUR KEY HERE"
+	let conversation_history = ""
 	
 
-	console.log(peers)
-	console.log(ClientPeers)
+	//console.log(peers)
+	//console.log(ClientPeers)
 	
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [ email, setEmail ] = useState(searchParams.get('email'))
@@ -64,15 +123,281 @@ function Dashboard(props) {
   	let region = "eastus";
   	var reco;
   	let authorizationToken = undefined;
-	let phraseDiv = document.getElementById("phraseDiv");
-	let speechDiv = document.getElementById("speechDiv");
-
-  	const openai = new OpenAI({
-		apiKey: openai_subscription_key,
-		dangerouslyAllowBrowser: true
-	});
 
   	useEffect( () => {
+		//socketRef.current = io.connect("http://localhost:3001");
+		socketRef.current = io.connect("https://facial-emotion-recognition-backend-dev-v3.azurewebsites.net");
+
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+            userVideo.current.srcObject = stream;
+            socketRef.current.emit("join room", {roomID, email, person});
+            socketRef.current.on("all users", users => {
+				//console.log(users)
+                const peers = [];
+				const client_peers = [];
+				const dealer_peers = [];
+                users.forEach(obj => {
+                    const peer = createPeer(obj.id, socketRef.current.id, stream, obj.role);
+                    peersRef.current.push({
+                        peerID: obj.id,
+                        peer,
+                    })
+					if(obj.role == "SalesPerson"){
+						peer.on("stream", stream => {
+							salespersonVideo.current.srcObject = stream;
+							//console.log(salespersonVideo)
+						})
+						setSalespersonSocketId(obj.id)
+						peers.push(peer);
+						doContinuousRecognition()
+					}
+					else if(obj.role == "Client"){
+						peer.on("stream", stream => {
+							clientVideo.current.srcObject = stream;
+						})
+						client_peers.push(peer);
+						//delay(3000)
+						loadModels()
+						doContinuousRecognition()
+					}
+					else if(obj.role == "Dealer"){
+						peer.on("stream", stream => {
+							dealerVideo.current.srcObject = stream;
+						})
+						dealer_peers.push(peer);
+						//delay(3000)
+						//loadModels()
+						//doContinuousRecognition()
+					}
+                })
+                setPeers(peers);
+				setClientPeers(client_peers);
+				setDealerPeers(dealer_peers);
+            })
+
+			socketRef.current.on("user joined", payload => {
+				console.log("user joined", payload.callerID)
+                const peer = addPeer(payload.signal, payload.callerID, stream, payload.role);
+                peersRef.current.push({
+                    peerID: payload.callerID,
+                    peer,
+                })
+				if(payload.role == "SalesPerson"){
+					peer.on("stream", stream => {
+						salespersonVideo.current.srcObject = stream;
+						console.log(salespersonVideo)
+					})
+					setSalespersonSocketId(payload.callerID)
+					setPeers(users => [...users, peer]);
+					doContinuousRecognition()
+				}
+				else if(payload.role == "Client"){
+					peer.on("stream", stream => {
+						clientVideo.current.srcObject = stream;
+					})
+					setClientPeers(users => [...users, peer]);
+					//delay(3000)
+					loadModels()
+					doContinuousRecognition()
+				}
+				else if(payload.role == "Dealer"){
+					peer.on("stream", stream => {
+						dealerVideo.current.srcObject = stream;
+					})
+					setDealerPeers(users => [...users, peer]);
+					//delay(3000)
+					//loadModels()
+					//doContinuousRecognition()
+				}
+            });
+
+            socketRef.current.on("receiving returned signal", payload => {
+                const item = peersRef.current.find(p => p.peerID === payload.id);
+                item.peer.signal(payload.signal);
+            });
+        })
+
+		
+		Initialize(async function (speechSdkParam) {
+			SpeechSDK = speechSdkParam;
+
+			// in case we have a function for getting an authorization token, call it.
+			if (typeof RequestAuthorizationToken === "function") {
+				await RequestAuthorizationToken();
+			}
+		});
+		
+
+	}, [])
+
+	const leaveCall = () => {
+		socketRef.current.emit("disconnectUser");
+		window.location.href = "/"
+	}
+
+	const callOpenAI = async () => {
+		//console.log("Hi from callOpenAI")
+		//conversation_history += ""
+		//console.log(conversation_history)
+
+		const openai = new OpenAI({
+			apiKey: openai_subscription_key,
+			dangerouslyAllowBrowser: true
+		});
+		
+		document.getElementById("aibutton").disabled = true;
+
+		//let prompt  = conversation_history
+
+		let system_prompt="Act as a car salesman.  Given below is a HTML conversation which shows the customer's emotion based on words spoken by the Salesman. Suggest what you should say next to make the Customer pleasantly surprised. Remove \"Salesman Says\" from your response. I don't need customer's side conversation."
+
+		let messages = [
+			{"role": "system", "content": system_prompt},
+			{"role": "user", "content": conversation_history},
+		]
+
+		//console.log(messages)
+
+		try {
+			const chatCompletion = await openai.chat.completions.create({
+				model: "gpt-3.5-turbo",
+				messages: messages,
+			});
+		
+			const text = chatCompletion.choices[0].message.content;
+			//return text;
+			//console.log(text)
+
+			document.getElementById("aidivspeech").innerHTML +=
+			`<div class="pt-4">
+				<span>
+					${text}
+				</span>
+			</div>
+			`
+			document.getElementById("aidivspeech").scrollTop = document.getElementById("aidivspeech").scrollHeight;
+
+			document.getElementById("aibutton").disabled = false;
+
+		} catch (err) {
+			console.error(err);
+
+			document.getElementById("aibutton").disabled = false;
+		}
+	}
+
+	function delay(time) {
+		return new Promise((resolve) => setTimeout(resolve, time))
+	}
+
+	function createPeer(userToSignal, callerID, stream, role) {
+        const peer = new Peer({
+            initiator: true,
+            trickle: false,
+			config: {
+				iceServers: [
+					{
+					  urls: "stun:stun.relay.metered.ca:80",
+					},
+					{
+					  urls: "turn:standard.relay.metered.ca:80",
+					  username: "4f036f4af058d524b3fff8cc",
+					  credential: "pPXGlN4NrqCgspQZ",
+					},
+					{
+					  urls: "turn:standard.relay.metered.ca:80?transport=tcp",
+					  username: "4f036f4af058d524b3fff8cc",
+					  credential: "pPXGlN4NrqCgspQZ",
+					},
+					{
+					  urls: "turn:standard.relay.metered.ca:443",
+					  username: "4f036f4af058d524b3fff8cc",
+					  credential: "pPXGlN4NrqCgspQZ",
+					},
+					{
+					  urls: "turns:standard.relay.metered.ca:443?transport=tcp",
+					  username: "4f036f4af058d524b3fff8cc",
+					  credential: "pPXGlN4NrqCgspQZ",
+					},
+				]
+			},
+            stream,
+        });
+		console.log("Hi 5")
+
+        peer.on("signal", signal => {
+			console.log("Hi 6")
+            socketRef.current.emit("sending signal", { userToSignal, callerID, signal, person })
+        })
+
+		/*
+		if(role == "Client"){
+			peer.on("stream", (stream) => {
+				//console.log("Hi2")
+				if(clientVideoStream.current){
+					console.log("assigned")
+					clientVideoStream.current.srcObject = stream
+				}
+				else{
+					console.log("not assigned")
+				}
+				
+			})
+		}
+		*/
+		
+		console.log("Hi 7")
+
+        return peer;
+    }
+
+	function addPeer(incomingSignal, callerID, stream, role) {
+        const peer = new Peer({
+            initiator: false,
+            trickle: false,
+			config: {
+				iceServers: [
+					{
+					  urls: "stun:stun.relay.metered.ca:80",
+					},
+					{
+					  urls: "turn:standard.relay.metered.ca:80",
+					  username: "4f036f4af058d524b3fff8cc",
+					  credential: "pPXGlN4NrqCgspQZ",
+					},
+					{
+					  urls: "turn:standard.relay.metered.ca:80?transport=tcp",
+					  username: "4f036f4af058d524b3fff8cc",
+					  credential: "pPXGlN4NrqCgspQZ",
+					},
+					{
+					  urls: "turn:standard.relay.metered.ca:443",
+					  username: "4f036f4af058d524b3fff8cc",
+					  credential: "pPXGlN4NrqCgspQZ",
+					},
+					{
+					  urls: "turns:standard.relay.metered.ca:443?transport=tcp",
+					  username: "4f036f4af058d524b3fff8cc",
+					  credential: "pPXGlN4NrqCgspQZ",
+					},
+				]
+			},
+            stream,
+        })
+		console.log("Hi 1")
+
+        peer.on("signal", signal => {
+			console.log("Hi 2")
+            socketRef.current.emit("returning signal", { signal, callerID, role })
+        })
+
+        peer.signal(incomingSignal);
+		console.log("Hi 3")
+
+        return peer;
+    }
+
+	useEffect( () => {
 		if(person == "SalesPerson"){
 			if(!document.getElementById("chartJS")){
 				var body= document.getElementsByTagName('body')[0];
@@ -81,6 +406,19 @@ function Dashboard(props) {
 				script.id= 'chartJS';
 				body.appendChild(script);
 			}
+
+			$(".bar").each(function() {
+				var $bar = $(this);
+				var label = $bar.data("label");
+				var value = $bar.data("value");
+				var color = $bar.data("color");
+		
+				var barHtml = '<div class="progress-line"><span style="width: ' + value + '%; background: ' + color + ';"></span></div>';
+				var labelHtml = '<div class="info"><span>' + label + '</span></div>';
+				var valueHtml = '<div class="value-display">' + value + '</div>';
+		
+				$bar.html(labelHtml + barHtml + valueHtml);
+			});
 
 			let $chart = $("#sentiment-chart");
 			let labels = $chart.data("labels").split(", ").map(label => label.trim());
@@ -120,8 +458,9 @@ function Dashboard(props) {
 				}
 			});
 
-			//console.log(chart)
+			//console.log(socketRef.current)
 			if(socketRef.current){
+				//loadModels()
 				socketRef.current.on("sendMSGToSalesmen", async (data) => {
 					console.log(data)
 					
@@ -148,251 +487,33 @@ function Dashboard(props) {
 							chart.update();
 						}
 					}
-						
-					
 				})
 			}
 		}
 	}, [person])
 
-	/*
-	useEffect(() => {
-		console.log("Here in ClientPeer Useeffect", ClientPeers.length)
-		if(ClientPeers.length > 0){
-			/*
-			ClientPeers[0].on("stream", (stream) => {
-				console.log(stream)
-				clientVideoStream.current.srcObject = stream;
-			})
-			*/
-			/*
-			ClientPeers.map((peer) => {
-				peer.on("stream", stream => {
-					console.log("Here in ClientPeer Useeffect Peer", stream)
-					clientVideoStream.current.srcObject = stream;
-				})
-			}, [])
-		}
-	}, [ClientPeers])
-	*/
-	
-
-  	useEffect( () => {
-		socketRef.current = io.connect("http://localhost:3001");
-		//socketRef.current = io.connect("https://facial-emotion-recognition-backend-dev-v3.azurewebsites.net");
-
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
-			console.log(stream)
-            userVideo.current.srcObject = stream;
-            socketRef.current.emit("join room", {roomID, email, person});
-            socketRef.current.on("all users", users => {
-				//console.log(users)
-                const peers = [];
-				const client_peers = [];
-                users.forEach(obj => {
-                    const peer = createPeer(obj.id, socketRef.current.id, stream, obj.role);
-                    peersRef.current.push({
-                        peerID: obj.id,
-                        peer,
-                    })
-					if(obj.role == "SalesPerson"){
-						peers.push(peer);
-					}
-					else if(obj.role == "Client"){
-						client_peers.push(peer);
-						//delay(3000)
-						//loadModels()
-					}
-                })
-
-                setPeers(peers);
-				setClientPeers(client_peers);
-            })
-
-            socketRef.current.on("user joined", payload => {
-                const peer = addPeer(payload.signal, payload.callerID, stream, payload.role);
-                peersRef.current.push({
-                    peerID: payload.callerID,
-                    peer,
-                })
-				if(payload.role == "SalesPerson"){
-					setPeers(users => [...users, peer]);
-				}
-				else if(payload.role == "Client"){
-					setClientPeers(users => [...users, peer]);
-					//delay(3000)
-					//loadModels()
-				}
-            });
-
-            socketRef.current.on("receiving returned signal", payload => {
-                const item = peersRef.current.find(p => p.peerID === payload.id);
-                item.peer.signal(payload.signal);
-            });
-        })
-
-		Initialize(async function (speechSdkParam) {
-			SpeechSDK = speechSdkParam;
-
-			// in case we have a function for getting an authorization token, call it.
-			if (typeof RequestAuthorizationToken === "function") {
-				await RequestAuthorizationToken();
-			}
-		});
+	const SentimentRecognition = async (inputtext) => {
+		const options = {
+			method: 'POST',
+			url: 'https://facial-emotion-recognition-backend-dev-v3.azurewebsites.net/get-sentiment',
+			headers: {
+			  'content-type': 'application/json',
+			},
+			data: {"data" : inputtext}
+		};
 		
-	}, [])
-
-	function delay(time) {
-		return new Promise((resolve) => setTimeout(resolve, time))
+		try {
+			const response = await axios.request(options);
+			//console.log(response.data);
+			return(response.data)
+		} 
+		catch (error) {
+			console.error(error);
+			return undefined
+		}
 	}
 
-	function createPeer(userToSignal, callerID, stream, role) {
-        const peer = new Peer({
-            initiator: true,
-            trickle: false,
-			config: {
-				iceServers: [
-					{
-					  urls: "stun:stun.relay.metered.ca:80",
-					},
-					{
-					  urls: "turn:standard.relay.metered.ca:80",
-					  username: "4f036f4af058d524b3fff8cc",
-					  credential: "pPXGlN4NrqCgspQZ",
-					},
-					{
-					  urls: "turn:standard.relay.metered.ca:80?transport=tcp",
-					  username: "4f036f4af058d524b3fff8cc",
-					  credential: "pPXGlN4NrqCgspQZ",
-					},
-					{
-					  urls: "turn:standard.relay.metered.ca:443",
-					  username: "4f036f4af058d524b3fff8cc",
-					  credential: "pPXGlN4NrqCgspQZ",
-					},
-					{
-					  urls: "turns:standard.relay.metered.ca:443?transport=tcp",
-					  username: "4f036f4af058d524b3fff8cc",
-					  credential: "pPXGlN4NrqCgspQZ",
-					},
-				]
-			},
-            stream,
-        });
-
-        peer.on("signal", signal => {
-            socketRef.current.emit("sending signal", { userToSignal, callerID, signal, person })
-        })
-
-        return peer;
-    }
-
-	function addPeer(incomingSignal, callerID, stream, role) {
-        const peer = new Peer({
-            initiator: false,
-            trickle: false,
-			config: {
-				iceServers: [
-					{
-					  urls: "stun:stun.relay.metered.ca:80",
-					},
-					{
-					  urls: "turn:standard.relay.metered.ca:80",
-					  username: "4f036f4af058d524b3fff8cc",
-					  credential: "pPXGlN4NrqCgspQZ",
-					},
-					{
-					  urls: "turn:standard.relay.metered.ca:80?transport=tcp",
-					  username: "4f036f4af058d524b3fff8cc",
-					  credential: "pPXGlN4NrqCgspQZ",
-					},
-					{
-					  urls: "turn:standard.relay.metered.ca:443",
-					  username: "4f036f4af058d524b3fff8cc",
-					  credential: "pPXGlN4NrqCgspQZ",
-					},
-					{
-					  urls: "turns:standard.relay.metered.ca:443?transport=tcp",
-					  username: "4f036f4af058d524b3fff8cc",
-					  credential: "pPXGlN4NrqCgspQZ",
-					},
-				]
-			},
-            stream,
-        })
-
-        peer.on("signal", signal => {
-            socketRef.current.emit("returning signal", { signal, callerID, role })
-        })
-
-        peer.signal(incomingSignal);
-
-        return peer;
-    }
-	
-	
-	const Video = (props) => {
-		const ref = useRef();
-	
-		useEffect(() => {
-			props.peer.on("stream", stream => {
-				console.log("Hi", stream)
-				ref.current.srcObject = stream;
-			})
-		}, []);
-	
-		return (
-			<video playsInline  ref={ref} autoPlay></video>
-		);
-	}
-
-	const ClientVideo = (props) => {
-		const ref = useRef();
-	
-		useEffect(() => {
-			props.peer.on("stream", stream => {
-				ref.current.srcObject = stream;
-			})
-		}, []);
-	
-		return (
-			<video playsInline  ref={ref} autoPlay></video>
-		);
-	}
-
-	const ClientVideo1 = (props) => {
-		const ref = useRef();
-	
-		useEffect(() => {
-			props.peer.on("stream", stream => {
-				ref.current.srcObject = stream;
-			})
-		}, []);
-	
-		return (
-			<div class = "client-video-1" >
-				<video playsInline  ref={ref} autoPlay></video>
-			</div>
-		);
-	}
-
-	const ClientVideo2 = (props) => {
-		const ref = useRef();
-	
-		useEffect(() => {
-			props.peer.on("stream", stream => {
-				ref.current.srcObject = stream;
-			})
-		}, []);
-	
-		return (
-			<div class = "client-video-2" >
-				<video playsInline  ref={ref} autoPlay></video>
-			</div>
-		);
-	}
-
-  	async function RequestAuthorizationToken() {
+	async function RequestAuthorizationToken() {
 		if (authorizationEndpoint) {
 			try {
 				const res = await axios.get(authorizationEndpoint);
@@ -545,7 +666,7 @@ function Dashboard(props) {
 
 	function onRecognizedResult(result) {
 		//console.log(result.reason == SpeechSDK.ResultReason.RecognizedSpeech)
-		//console.log(result.text)
+		console.log(result.text)
 		//console.log(person)
 		if(!result.text){
 			return
@@ -561,13 +682,15 @@ function Dashboard(props) {
 					//console.log("Client",result.text)
 					
 					//socketRef.current.emit("sendMSG", { to: caller, message: result.text })
+					console.log("sendMSG", { to: roomID, message: result.text })
+					socketRef.current.emit("sendMSG", { to: roomID, message: result.text });
 
 					break;
 				case SpeechSDK.ResultReason.TranslatedSpeech:
 				case SpeechSDK.ResultReason.RecognizedIntent:
 			}
 		}
-		else {
+		else if(person == "SalesPerson") {
 			//phraseDiv.scrollTop = phraseDiv.scrollHeight;
 			//phraseDiv.innerHTML = phraseDiv.innerHTML.replace(/(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/, '$1$2');
 
@@ -627,14 +750,6 @@ function Dashboard(props) {
 		window.console.log(cancellationEventArgs);
 	}
 
-	const rejectCall = () => {
-		window.location.href = "/"
-	}
-
-	const leaveCall = () => {
-		window.location.href = "/"
-	}
-
 	const loadModels = () => {
 		if(person == "SalesPerson"){
 			Promise.all([
@@ -650,9 +765,9 @@ function Dashboard(props) {
 
 	const faceDetection = async () => {
 		let interval = setInterval(async() => {
-			console.log(clientVideoStream.current)
-			if(userVideo.current){
-				const detections = await faceapi.detectAllFaces(userVideo.current, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions();
+			//console.log(clientVideoStream.current)
+			if(clientVideo.current){
+				const detections = await faceapi.detectAllFaces(clientVideo.current, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions();
 
 				if(detections){
 					if(detections.length > 0){
@@ -772,94 +887,68 @@ function Dashboard(props) {
 				}
 			}
 			else{
-				clearInterval(interval)
+				//clearInterval(interval)
 			}
 		}, 1000)
 	}
+	
 
-	const callOpenAI = async () => {
-		//conversation_history += ""
-		//console.log(conversation_history)
-		
-		document.getElementById("aibutton").disabled = true;
-
-		//let prompt  = conversation_history
-
-		let system_prompt="Act as a car salesman.  Given below is a HTML conversation which shows the customer's emotion based on words spoken by the Salesman. Suggest what you should say next to make the Customer pleasantly surprised. Remove \"Salesman Says\" from your response. I don't need customer's side conversation."
-
-		let messages = [
-			{"role": "system", "content": system_prompt},
-			{"role": "user", "content": conversation_history},
-		]
-
-		//console.log(messages)
-
-		try {
-			/*
-			const config = new Configuration({
-				apiKey: openai_subscription_key,
-			})
-			
-			const openai = new OpenAIApi({
-				apiKey: openai_subscription_key
-			});
-			*/
-
-			const chatCompletion = await openai.chat.completions.create({
-				model: "gpt-3.5-turbo",
-				messages: messages,
-			});
-		
-			const text = chatCompletion.choices[0].message.content;
-			//return text;
-			//console.log(text)
-
-			document.getElementById("aidivspeech").innerHTML +=
-			`<div class="pt-4">
-				<span>
-					${text}
-				</span>
-			</div>
-			`
-			document.getElementById("aidivspeech").scrollTop = document.getElementById("aidivspeech").scrollHeight;
-			
-			document.getElementById("aibutton").disabled = false;
-
-		} catch (err) {
-			console.error(err);
-		}
-	}
-
-	const SentimentRecognition = async (inputtext) => {
-		const options = {
-			method: 'POST',
-			url: 'https://facial-emotion-recognition-backend-dev-v3.azurewebsites.net/get-sentiment',
-			headers: {
-			  'content-type': 'application/json',
-			},
-			data: {"data" : inputtext}
-		};
-		
-		try {
-			const response = await axios.request(options);
-			//console.log(response.data);
-			return(response.data)
-		} 
-		catch (error) {
-			console.error(error);
-			return undefined
-		}
-	}
-
+	
 
   return (
+	/*
+	<div>
+            <StyledVideo muted ref={userVideo} autoPlay playsInline />
+			{
+				(person == "SalesPerson") ? 
+				<>
+					<p> ---------------------------------------------------------------------------------------------- </p>
+					<br />
+					<p> Salesmen </p>
+					{peers.map((peer, index) => {
+						return (
+							<Video key={index} peer={peer} />
+						);
+					})}
+					<p> ---------------------------------------------------------------------------------------------- </p>
+					<br />
+					<p> Client </p>
+					{ClientPeers.map((peer, index) => {
+						return (
+							<ClientVideo1 key={index} peer={peer} />
+						);
+					})}
+				</>
+				:
+				<>
+					<p> ---------------------------------------------------------------------------------------------- </p>
+					<br />
+					<p> Salesmen 2 </p>
+					{peers.map((peer, index) => {
+						return (
+							<Video key={index} peer={peer} />
+						);
+					})}
+					<p> ---------------------------------------------------------------------------------------------- </p>
+					<br />
+					<p> Client 2 </p>
+					{ClientPeers.map((peer, index) => {
+						return (
+							<ClientVideo1 key={index} peer={peer} />
+						);
+					})}
+				</>
+			}
+    </div>
+	*/
+	
     <div className="wrapper">
-        <Navbar />
+        
 
         <div className="main fixed">
-           <Header />
+           
 		   {
-				(person=="SalesPerson") ? 
+				(person == "SalesPerson") ? 
 				<>
 					<main className="content-salesman px-3 py-2">
 						<div className="container-fluid">
@@ -871,10 +960,13 @@ function Dashboard(props) {
 
 												<div className="salesman-video-container">
 													<div className="salesman-video">
-														{
-															(ClientPeers.length == 1) &&
-															<Video peer={ClientPeers[0]} />
-														}
+														{ClientPeers.map((peer, index) => {
+																return (
+																	<div key={index} className="client-video-1" >
+																		<video playsInline  ref={clientVideo} autoPlay></video>
+																	</div>
+																);
+														})}
 													</div>
 													<div className="profile-overlay-salesman">
 														{
@@ -885,8 +977,18 @@ function Dashboard(props) {
 													</div>
 													<div className="profile-overlay-salesman-2">
 														{
-															(peers.length == 1) &&
-															<Video peer={peers[0]} />
+															/*
+															peers.map((peer, index) => {
+																return (
+																	<video key={index} playsInline  ref={salespersonVideo} autoPlay></video>
+																);
+															})
+															*/
+															DealerPeers.map((peer, index) => {
+																return (
+																	<video key={index} playsInline  ref={dealerVideo} autoPlay></video>
+																);
+															})
 														}
 													</div>
 												</div>
@@ -918,8 +1020,11 @@ function Dashboard(props) {
 												<div className="col-lg-12 col-md-12 col-sm-12">
 													<div className="card">
 														<div className="card-header p-3 text-center">
-															<button className="generate-response-button" id="aibutton"
-																onClick={() => callOpenAI()} ><b>Generate AI Response</b></button>
+															<button 
+															className="generate-response-button" id="aibutton"
+																onClick={ () => callOpenAI() } ><b>Generate AI Response</b>
+															</button>
+															
 														</div>
 														<div className="card-body" id="aidivspeech" style={{"maxHeight" : "350px", "overflowY" : "scroll"}}>
 														</div>
@@ -927,6 +1032,7 @@ function Dashboard(props) {
 												</div>
 									</div>
 								</div>
+								
 								<div className="col-lg-7 col-md-12 col-sm-12">
 									<div className="row">
 										<div className="col-lg-6 col-md-12 col-sm-12 pb-res">
@@ -995,72 +1101,170 @@ function Dashboard(props) {
 										</div>
 									</div>
 								</div>
+
 							</div>
 						</div>
 					</main>
 				</>
 				:
-				<>
-					<main className="content-client  px-3 py-2">
-						<div className="container-fluid">
-							<div className="row mt-3 ">
-								<div className="col-lg-12 col-md-12 col-sm-12">
-									<div className="row pt-3">
-										<div className="col-lg-12 col-md-12 col-sm-12">
-											<div className="card">
-												
-												<div class="client-video-container">
-													{
-														(peers.length == 1) &&
-														<ClientVideo1 peer={peers[0]} />
-													}
-													{
-														(peers.length == 2) &&
-														<>
-																<ClientVideo1 peer={peers[0]} />
-																<ClientVideo2 peer={peers[1]} />
-														</>
-													}
+				(
+					(person == "Client") ?
+					<>
+						<main className="content-client  px-3 py-2">
+							<div className="container-fluid">
+								<div className="row mt-3 ">
+									<div className="col-lg-12 col-md-12 col-sm-12">
+										<div className="row pt-3">
+											<div className="col-lg-12 col-md-12 col-sm-12">
+												<div className="card">
 													
-													<div class="profile-overlay-client">
+													<div class="client-video-container">
+														
 														{
-															userVideo &&
-															<video playsInline muted ref={userVideo} autoPlay loop>
-															</video>
+															//(peers.length == 1) &&
+															//<ClientVideo1 peer={peers[0]} />
 														}
+														{
+															//(peers.length == 2) &&
+															//<>
+																	//<ClientVideo1 peer={peers[0]} />
+																	//</><ClientVideo2 peer={peers[1]} />
+															//</>
+														}
+														{
+															peers.map((peer, index) => {
+																return (
+																	<video key={index} playsInline  ref={salespersonVideo} autoPlay></video>
+																);
+															})
+														}
+														{
+															DealerPeers.map((peer, index) => {
+																return (
+																	<video key={index} playsInline  ref={dealerVideo} autoPlay></video>
+																);
+															})
+														}
+														
+														
+														<div class="profile-overlay-client">
+															{
+																userVideo &&
+																<video playsInline muted ref={userVideo} autoPlay loop>
+																</video>
+															}
+														</div>
 													</div>
-												</div>
 
-												<div className="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
-													<div className="controls-client">
-														<button className="btn control-circle-client">
-															<i className="bi bi-volume-up"></i>
-														</button>
-														<button className="btn control-circle-client">
-															<i className="bi bi-mic"></i>
-														</button>
-														<button className="btn control-circle-red-client" onClick={ () => leaveCall()}>
-															<i className="bi bi-telephone-fill"></i>
-														</button>
-														<button class ="btn control-circle-client">
-															<i className="bi bi-camera-video"></i>
-														</button>
-														<button className="btn control-circle-client">
-															<i className="bi bi-people"></i>
-														</button>
+													<div className="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
+														<div className="controls-client">
+															<button className="btn control-circle-client">
+																<i className="bi bi-volume-up"></i>
+															</button>
+															<button className="btn control-circle-client">
+																<i className="bi bi-mic"></i>
+															</button>
+															<button className="btn control-circle-red-client" onClick={ () => leaveCall()}>
+																<i className="bi bi-telephone-fill"></i>
+															</button>
+															<button class ="btn control-circle-client">
+																<i className="bi bi-camera-video"></i>
+															</button>
+															<button className="btn control-circle-client">
+																<i className="bi bi-people"></i>
+															</button>
+														</div>
 													</div>
+													
 												</div>
 											</div>
 										</div>
 									</div>
 								</div>
 							</div>
-						</div>
-					</main>
-				</>
+						</main>
+					</>
+					:
+					<>
+						<main className="content-client  px-3 py-2">
+							<div className="container-fluid">
+								<div className="row mt-3 ">
+									<div className="col-lg-12 col-md-12 col-sm-12">
+										<div className="row pt-3">
+											<div className="col-lg-12 col-md-12 col-sm-12">
+												<div className="card">
+													
+													<div class="client-video-container">
+														
+														{
+															//(peers.length == 1) &&
+															//<ClientVideo1 peer={peers[0]} />
+														}
+														{
+															//(peers.length == 2) &&
+															//<>
+																	//<ClientVideo1 peer={peers[0]} />
+																	//</><ClientVideo2 peer={peers[1]} />
+															//</>
+														}
+														{
+															peers.map((peer, index) => {
+																return (
+																	<video key={index} playsInline  ref={salespersonVideo} autoPlay></video>
+																);
+															})
+														}
+														{
+															ClientPeers.map((peer, index) => {
+																return (
+																	<video key={index} playsInline  ref={clientVideo} autoPlay></video>
+																);
+															})
+														}
+														
+														
+														<div class="profile-overlay-client">
+															{
+																userVideo &&
+																<video playsInline muted ref={userVideo} autoPlay loop>
+																</video>
+															}
+														</div>
+													</div>
+
+													<div className="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
+														<div className="controls-client">
+															<button className="btn control-circle-client">
+																<i className="bi bi-volume-up"></i>
+															</button>
+															<button className="btn control-circle-client">
+																<i className="bi bi-mic"></i>
+															</button>
+															<button className="btn control-circle-red-client" onClick={ () => leaveCall()}>
+																<i className="bi bi-telephone-fill"></i>
+															</button>
+															<button class ="btn control-circle-client">
+																<i className="bi bi-camera-video"></i>
+															</button>
+															<button className="btn control-circle-client">
+																<i className="bi bi-people"></i>
+															</button>
+														</div>
+													</div>
+													
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</main>
+					</>
+				)
 		   }
 			</div>
 	</div>
+	
   );
 }
 
