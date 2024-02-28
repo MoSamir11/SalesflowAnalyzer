@@ -3,7 +3,7 @@ function Navbar() {
     <aside id="sidebar">
             <div>
                 <div className="sidebar-logo">
-                    <a href="#">SalesFlow <span>Analyzer</span></a>
+                    <a href="#">Magic <span>CX</span></a>
                 </div>
 
                 <ul className="sidebar-nav">

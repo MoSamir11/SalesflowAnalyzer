@@ -395,7 +395,8 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
             io.in(data.to).emit("sendMSGToSalesmen", { to: data.to, message : data.message });
         })
     
-        socket.on('disconnectUser', async () => {
+        socket.on('disconnectUser', async (data) => {
+            console.log(`399--> ${data}`);
             const roomID = socketToRoom[socket.id];
             let room = users[roomID];
             if (room) {
@@ -404,7 +405,8 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
                 users[roomID] = room;
             }
             //io.sockets.socket(socket.id).disconnect();
-            //io.sockets.connected[socket.id].disconnect()
+            //io.sockets.connected[socket.id].disconnect();
+            socket.to(data).emit("disconnected")
             socket.leave(room)
         });
     

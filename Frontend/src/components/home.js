@@ -37,7 +37,7 @@ function Home() {
             <nav className="navbar navbar-expand-lg bg-body-tertiary border-bottom">
               <div className="container-fluid">
                   <div className="index-logo p-2">
-                      <a href="#">SalesFlow <span>Analyzer</span></a>
+                      <a href="#">Magic <span>CX</span></a>
                   </div>
                   {/* <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
                       <span className="navbar-toggler-icon"></span>
@@ -116,9 +116,11 @@ function Home() {
               <div className="row pt-5 align-items-center res-align">
                     <div className="col-lg-3 col-md-12 col-sm-12">
 					            <div className="btn-group pb-res">
+                      <CopyToClipboard text={room}>
                         <button type="button" className="btn-hover btn text-white bg-violet" id="copyButton" data-toggle="tooltip" data-placement="top" data-text-to-copy={room}>
                             <i className="bi bi-camera-video me-2"></i>New Meeting
                         </button>
+                        </CopyToClipboard>
 					            </div>
 
 					          </div>

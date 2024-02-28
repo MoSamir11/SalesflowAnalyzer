@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from "react"
-import {useLocation, useParams, useSearchParams} from 'react-router-dom';
+import {useLocation, useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import Peer from "simple-peer"
 import io from "socket.io-client"
 
@@ -77,7 +77,7 @@ function Dashboard() {
 
 	const { chatroom } = useParams(); 
 	const [ roomID, setRoomID ] = useState(chatroom)
-
+	const navigate = useNavigate();
 	const [peers, setPeers] = useState([]);
 	const [ClientPeers, setClientPeers] = useState([]);
 	const [DealerPeers, setDealerPeers] = useState([]);
@@ -125,8 +125,8 @@ function Dashboard() {
   	let authorizationToken = undefined;
 
   	useEffect( () => {
-		//socketRef.current = io.connect("http://localhost:3001");
-		socketRef.current = io.connect("https://facial-emotion-recognition-backend-dev-v3.azurewebsites.net");
+		socketRef.current = io.connect("http://localhost:3001");
+		// socketRef.current = io.connect("https://facial-emotion-recognition-backend-dev-v3.azurewebsites.net");
 
         navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
             userVideo.current.srcObject = stream;
@@ -215,6 +215,12 @@ function Dashboard() {
                 const item = peersRef.current.find(p => p.peerID === payload.id);
                 item.peer.signal(payload.signal);
             });
+
+			socketRef.current.on("disconnected",()=>{
+				console.log("user-disconnected")
+				navigate("/");
+				window.location.reload()
+			})
         })
 
 		
@@ -231,7 +237,7 @@ function Dashboard() {
 	}, [])
 
 	const leaveCall = () => {
-		socketRef.current.emit("disconnectUser");
+		socketRef.current.emit("disconnectUser", roomID);
 		window.location.href = "/"
 	}
 
@@ -776,7 +782,7 @@ function Dashboard() {
 						//console.log(ExpressionKeyArray)
 						ExpressionKeyArray.map((obj) => {
 							if(obj == "happy"){
-								let expressionNumber = Math.floor(Number(detections[0].expressions["happy"])*100)
+								let expressionNumber = Math.floor(Number(detections[0].expressions["happy"])*100);
 								if(expressionNumber == 0){
 									expressionNumber = 1
 								}
@@ -993,7 +999,7 @@ function Dashboard() {
 													</div>
 												</div>
 
-												<div className="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
+												<div className="controls-wrapper position-absolute bottom-0 start-80 translate-middle-x">
 													<div className="controls">
 														<button className="btn control-circle">
 															<i className="bi bi-volume-up"></i>
