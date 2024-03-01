@@ -373,10 +373,16 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
             socket.join(roomID);
             //const usersInThisRoom = users[roomID].filter(id => id !== socket.id);
             const usersInThisRoom = users[roomID].filter(obj => obj.id !== socket.id);
-            console.log(usersInThisRoom)
+            // console.log(usersInThisRoom)
             socket.emit("all users", usersInThisRoom);
         });
     
+        socket.on("start:video",(data)=>{
+            const usersInThisRoom = users[data.roomID].filter(obj => obj.id !== socket.id);
+            // console.log(usersInThisRoom)
+            socket.emit("all users", usersInThisRoom);
+        })
+
         socket.on("sending signal", payload => {
             //console.log(payload)
             io.to(payload.userToSignal).emit('user joined', { signal: payload.signal, callerID: payload.callerID, role: payload.person });
@@ -387,12 +393,13 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
         });
 
         socket.on("sendMSG", (data) => {
-            console.log(data)
+            // console.log(data.person)
             //io.to(data.to).emit("sendMSGToSalesmen", { to: data.to, message : data.message })
             //socket.emit("sendMSGToSalesmen", { to: data.to, message : data.message });
             //socket.broadcast.emit("sendMSGToSalesmen", { to: data.to, message : data.message })
             // sending to all clients in 'game' room, including sender
-            io.in(data.to).emit("sendMSGToSalesmen", { to: data.to, message : data.message });
+            
+            io.in(data.to).emit("sendMSGToSalesmen", { to: data.to, message : data.message, time: data.time, userType: data.person });
         })
     
         socket.on('disconnectUser', async (data) => {

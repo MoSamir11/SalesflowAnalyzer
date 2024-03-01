@@ -84,6 +84,7 @@ function Dashboard() {
 	const [DealerPeers, setDealerPeers] = useState([]);
 	const socketRef = useRef();
 	const userVideo = useRef();
+	const [stream, setStream] = useState(null);
 	const clientVideo = useRef({});
 	const salespersonVideo = useRef({});
 	const dealerVideo = useRef({});
@@ -95,7 +96,7 @@ function Dashboard() {
 	let openai_subscription_key = "ENTER YOUR KEY HERE"
 	let conversation_history = ""
 	const [muted, setMuted] = useState(false);
-
+	const [webCamStatus, setWebCamStatus] = useState(true);
 	//console.log(peers)
 	//console.log(ClientPeers)
 	
@@ -131,9 +132,10 @@ function Dashboard() {
 
         navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
             userVideo.current.srcObject = stream;
+			setStream(stream);
             socketRef.current.emit("join room", {roomID, email, person});
             socketRef.current.on("all users", users => {
-				//console.log(users)
+				console.log(users)
                 const peers = [];
 				const client_peers = [];
 				const dealer_peers = [];
@@ -913,10 +915,27 @@ function Dashboard() {
 		}, 1000)
 	}
 	
-	const muteMySelf = async()=>{
+	const muteMySelf = ()=>{
 		setMuted(!muted);
 	}
-	
+	const turnOffVideo = ()=>{
+		setWebCamStatus(false);
+		const track = stream.getTracks();
+		track.forEach(function(track){
+			track.stop()
+		})
+		console.log(track);
+	}
+
+	const turnOnWebCam = () =>{
+		setWebCamStatus(true);
+		navigator.mediaDevices.getUserMedia({video: true, audio: true})
+			.then((stream)=>{
+				userVideo.current.srcObject = stream;
+				setStream(stream);
+				socketRef.current.emit("start:video",{roomID, email, person});
+			})
+	}
 
   return (
 	/*
@@ -1027,9 +1046,16 @@ function Dashboard() {
 														<button className="btn control-circle-red" onClick={() => leaveCall()}>
 															<i className="bi bi-telephone-fill"></i>
 														</button>
-														<button class ="btn control-circle">
-															<i className="bi bi-camera-video"></i>
-														</button>
+														{
+																webCamStatus?
+																<button class ="btn control-circle-client" onClick={()=>turnOffVideo()}>
+																	<i className="bi bi-camera-video"></i>
+																</button>
+																:
+																<button class ="btn control-circle-client" onClick={()=>turnOnWebCam()}>
+																	<i className="bi bi-camera-video-off"></i>
+																</button>
+															}
 														<button className="btn control-circle">
 															<i className="bi bi-people"></i>
 														</button>
@@ -1190,9 +1216,16 @@ function Dashboard() {
 															<button className="btn control-circle-red-client" onClick={ () => leaveCall()}>
 																<i className="bi bi-telephone-fill"></i>
 															</button>
-															<button class ="btn control-circle-client">
-																<i className="bi bi-camera-video"></i>
-															</button>
+															{
+																webCamStatus?
+																<button class ="btn control-circle-client" onClick={()=>turnOffVideo()}>
+																	<i className="bi bi-camera-video"></i>
+																</button>
+																:
+																<button class ="btn control-circle-client" onClick={()=>turnOnWebCam()}>
+																	<i className="bi bi-camera-video-off"></i>
+																</button>
+															}
 															<button className="btn control-circle-client">
 																<i className="bi bi-people"></i>
 															</button>
@@ -1247,10 +1280,11 @@ function Dashboard() {
 														
 														
 														<div class="profile-overlay-client">
+														
 															{
 																userVideo &&
-																<video playsInline muted={muted} ref={userVideo}  autoPlay loop>
-																</video>
+																webCamStatus? <video playsInline muted={muted} ref={userVideo}  autoPlay loop>
+																</video>:<p>Hello World</p>
 															}
 														</div>
 													</div>
@@ -1266,9 +1300,17 @@ function Dashboard() {
 															<button className="btn control-circle-red-client" onClick={ () => leaveCall()}>
 																<i className="bi bi-telephone-fill"></i>
 															</button>
-															<button class ="btn control-circle-client">
-																<i className="bi bi-camera-video"></i>
-															</button>
+															{
+																webCamStatus?
+																<button class ="btn control-circle-client" onClick={()=>turnOffVideo()}>
+																	<i className="bi bi-camera-video"></i>
+																</button>
+																:
+																<button class ="btn control-circle-client" onClick={()=>turnOnWebCam()}>
+																	<i className="bi bi-camera-video-off"></i>
+																</button>
+															}
+															
 															<button className="btn control-circle-client">
 																<i className="bi bi-people"></i>
 															</button>
