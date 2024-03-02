@@ -356,6 +356,7 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
 
     io.on('connection', socket => {
         socket.on("join room", data => {
+            // console.log(socket.id,data.roomID);
             let {roomID, email, person} = data
             if (users[roomID]) {
                 const length = users[roomID].length;
@@ -364,23 +365,29 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
                     return;
                 }
                 //users[roomID].push(socket.id);
-                users[roomID].push({"id": socket.id, "email" : email, "role" : person});
+                users[roomID].push({"id": socket.id, "email" : email, "role" : person, "mutedAudio": false,"video": true});
             } else {
                 //users[roomID] = [socket.id];
-                users[roomID] = [{"id": socket.id, "email" : email, "role" : person}];
+                users[roomID] = [{"id": socket.id, "email" : email, "role" : person, "mutedAudio": false, "video": true}];
             }
             socketToRoom[socket.id] = roomID;
             socket.join(roomID);
+            console.log(`375--> ${socket.id}, ${person}`);
             //const usersInThisRoom = users[roomID].filter(id => id !== socket.id);
             const usersInThisRoom = users[roomID].filter(obj => obj.id !== socket.id);
             // console.log(usersInThisRoom)
             socket.emit("all users", usersInThisRoom);
         });
     
-        socket.on("start:video",(data)=>{
-            const usersInThisRoom = users[data.roomID].filter(obj => obj.id !== socket.id);
-            // console.log(usersInThisRoom)
-            socket.emit("all users", usersInThisRoom);
+        socket.on("mute:me",(data)=>{
+            let usersInThisRoom = users[data.roomID].find(obj => obj.id === socket.id).mutedAudio = true;
+    
+            console.log(`383--> ${JSON.stringify(users[data.roomID])}`);
+            socket.to(data.roomID).emit("mute:user",{person: data.person})
+        });
+
+        socket.on("unmute:me",(data)=>{
+            socket.to(data.roomID).emit("unmute:user",{person: data.person})
         })
 
         socket.on("sending signal", payload => {
@@ -403,7 +410,6 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
         })
     
         socket.on('disconnectUser', async (data) => {
-            console.log(`399--> ${data}`);
             const roomID = socketToRoom[socket.id];
             let room = users[roomID];
             if (room) {

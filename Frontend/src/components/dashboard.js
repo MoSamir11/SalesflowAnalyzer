@@ -95,7 +95,11 @@ function Dashboard() {
 	let openai_subscription_key = "ENTER YOUR KEY HERE"
 	let conversation_history = ""
 	const [muted, setMuted] = useState(false);
-
+	const [muteSalesPerson, setMuteSalesPerson] = useState(false);
+	const [muteDealer, setMuteDealer] = useState(false);
+	const [muteClient, setMuteClient] = useState(false);
+	const [stream,setStream] = useState(null);
+	const [webCamStatus, setWebCamStatus] = useState(true);
 	//console.log(peers)
 	//console.log(ClientPeers)
 	
@@ -131,13 +135,14 @@ function Dashboard() {
 
         navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
             userVideo.current.srcObject = stream;
+			setStream(stream);
             socketRef.current.emit("join room", {roomID, email, person});
             socketRef.current.on("all users", users => {
-				//console.log(users)
                 const peers = [];
 				const client_peers = [];
 				const dealer_peers = [];
                 users.forEach(obj => {
+					console.log(`146--> ${JSON.stringify(obj.mutedAudio)}`);
                     const peer = createPeer(obj.id, socketRef.current.id, stream, obj.role);
                     peersRef.current.push({
                         peerID: obj.id,
@@ -150,6 +155,7 @@ function Dashboard() {
 						})
 						setSalespersonSocketId(obj.id)
 						peers.push(peer);
+						setMuteSalesPerson(obj.mutedAudio);
 						doContinuousRecognition()
 					}
 					else if(obj.role == "Client"){
@@ -158,7 +164,8 @@ function Dashboard() {
 						})
 						client_peers.push(peer);
 						//delay(3000)
-						loadModels()
+						loadModels();
+						setMuteClient(obj.mutedAudio)
 						doContinuousRecognition()
 					}
 					else if(obj.role == "Dealer"){
@@ -166,6 +173,7 @@ function Dashboard() {
 							dealerVideo.current.srcObject = stream;
 						})
 						dealer_peers.push(peer);
+						setMuteDealer(obj.mutedAudio)
 						//delay(3000)
 						//loadModels()
 						//doContinuousRecognition()
@@ -217,11 +225,33 @@ function Dashboard() {
                 item.peer.signal(payload.signal);
             });
 
+			socketRef.current.on("mute:user",(data)=>{
+				console.log(`223--> ${data.person}`);
+				if(data.person == "SalesPerson"){
+					setMuteSalesPerson(true)
+				} else if(data.person == "Client"){
+					setMuteClient(true)
+				} else if(data.person == "Dealer"){
+					setMuteDealer(true)
+				}
+			})
+
+			socketRef.current.on("unmute:user",(data)=>{
+				if(data.person == "SalesPerson"){
+					setMuteSalesPerson(false)
+				} else if(data.person == "Client"){
+					setMuteClient(false)
+				} else if(data.person == "Dealer"){
+					setMuteDealer(false)
+				}
+			})
+
 			socketRef.current.on("disconnected",()=>{
 				console.log("user-disconnected")
 				navigate("/");
 				window.location.reload()
-			})
+			});
+
         })
 
 		
@@ -619,6 +649,24 @@ function Dashboard() {
 		reco.startContinuousRecognitionAsync();
 	}
 
+	function stopContinuousRecognition() {
+		
+		var audioConfig = getAudioConfig();
+		var speechConfig = getSpeechConfig(SpeechSDK.SpeechConfig);
+		//console.log(speechConfig)
+		if (!speechConfig) return;
+
+		// Create the SpeechRecognizer and set up common event handlers and PhraseList data
+		reco = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+		//console.log(reco)
+		applyCommonConfigurationTo(reco);
+
+		// Start the continuous recognition. Note that, in this continuous scenario, activity is purely event-
+		// driven, as use of continuation (as is in the single-shot sample) isn't applicable when there's not a
+		// single result.
+		reco.startContinuousRecognitionAsync();
+	}
+
 	function applyCommonConfigurationTo(recognizer) {
 		// The 'recognizing' event signals that an intermediate recognition result is received.
 		// Intermediate results arrive while audio is being processed and represent the current "best guess" about
@@ -913,10 +961,25 @@ function Dashboard() {
 		}, 1000)
 	}
 	
-	const muteMySelf = async()=>{
+	const muteMySelf = ()=>{
 		setMuted(!muted);
+		console.log(`942--> ${muted}`);
+		// if(muted==true){
+			socketRef.current.emit("mute:me",{roomID, person })
+			stopContinuousRecognition();
+		// } else {
+		// 	socketRef.current.emit("mute:me",{roomID, person })
+		// }
 	}
-	
+	const unmuteMySelf = ()=>{
+		setMuted(!muted);
+		socketRef.current.emit("unmute:me",{roomID, person });
+		doContinuousRecognition();
+	}
+	const toggleVideo = ()=>{
+		setWebCamStatus(false);
+		
+	}
 
   return (
 	/*
@@ -986,7 +1049,7 @@ function Dashboard() {
 														{ClientPeers.map((peer, index) => {
 																return (
 																	<div key={index} className="client-video-1" >
-																		<video playsInline  ref={clientVideo} autoPlay></video>
+																		<video playsInline muted={muteClient} ref={clientVideo} autoPlay></video>
 																	</div>
 																);
 														})}
@@ -1009,7 +1072,7 @@ function Dashboard() {
 															*/
 															DealerPeers.map((peer, index) => {
 																return (
-																	<video key={index} playsInline  ref={dealerVideo} autoPlay></video>
+																	<video key={index} playsInline muted={muteDealer}  ref={dealerVideo} autoPlay></video>
 																);
 															})
 														}
@@ -1021,13 +1084,23 @@ function Dashboard() {
 														<button className="btn control-circle">
 															<i className="bi bi-volume-up"></i>
 														</button>
-														<button className="btn control-circle" onClick={()=>muteMySelf()}>
+														{
+															muted?
+															<button className="btn control-circle" onClick={()=>unmuteMySelf()}>
+																<i className="bi bi-mic-mute"></i>
+															</button>
+															: 
+															<button className="btn control-circle" onClick={()=>muteMySelf()}>
+																<i className="bi bi-mic"></i>
+															</button>
+														}
+														{/* <button className="btn control-circle" onClick={()=>muteMySelf()}>
 															<i className={muted?"bi bi-mic-mute": "bi bi-mic"}></i>
-														</button>
+														</button> */}
 														<button className="btn control-circle-red" onClick={() => leaveCall()}>
 															<i className="bi bi-telephone-fill"></i>
 														</button>
-														<button class ="btn control-circle">
+														<button class ="btn control-circle" onClick={()=>toggleVideo()}>
 															<i className="bi bi-camera-video"></i>
 														</button>
 														<button className="btn control-circle">
@@ -1157,14 +1230,14 @@ function Dashboard() {
 														{
 															peers.map((peer, index) => {
 																return (
-																	<video key={index} playsInline muted ref={salespersonVideo} autoPlay></video>
+																	<video key={index} playsInline muted={muteSalesPerson} ref={salespersonVideo} autoPlay></video>
 																);
 															})
 														}
 														{
 															DealerPeers.map((peer, index) => {
 																return (
-																	<video key={index} playsInline  ref={dealerVideo} autoPlay></video>
+																	<video key={index} playsInline muted={muteDealer} ref={dealerVideo} autoPlay></video>
 																);
 															})
 														}
@@ -1184,9 +1257,19 @@ function Dashboard() {
 															<button className="btn control-circle-client">
 																<i className="bi bi-volume-up"></i>
 															</button>
-															<button className="btn control-circle-client" onClick={()=>muteMySelf()}>
+															{
+															muted?
+																<button className="btn control-circle" onClick={()=>unmuteMySelf()}>
+																	<i className="bi bi-mic-mute"></i>
+																</button>
+																: 
+																<button className="btn control-circle" onClick={()=>muteMySelf()}>
+																	<i className="bi bi-mic"></i>
+																</button>
+															}
+															{/* <button className="btn control-circle-client" onClick={()=>muteMySelf()}>
 																<i className={muted?"bi bi-mic-mute": "bi bi-mic"}></i>
-															</button>
+															</button> */}
 															<button className="btn control-circle-red-client" onClick={ () => leaveCall()}>
 																<i className="bi bi-telephone-fill"></i>
 															</button>
@@ -1233,14 +1316,14 @@ function Dashboard() {
 														{
 															peers.map((peer, index) => {
 																return (
-																	<video key={index} playsInline  ref={salespersonVideo} autoPlay></video>
+																	<video key={index} playsInline  ref={salespersonVideo} muted={muteSalesPerson} autoPlay></video>
 																);
 															})
 														}
 														{
 															ClientPeers.map((peer, index) => {
 																return (
-																	<video key={index} playsInline  ref={clientVideo} autoPlay></video>
+																	<video key={index} playsInline muted={muteClient}  ref={clientVideo} autoPlay></video>
 																);
 															})
 														}
@@ -1260,9 +1343,19 @@ function Dashboard() {
 															<button className="btn control-circle-client">
 																<i className="bi bi-volume-up"></i>
 															</button>
-															<button className="btn control-circle-client" onClick={()=>muteMySelf()}>
+															{
+															muted?
+																<button className="btn control-circle" onClick={()=>unmuteMySelf()}>
+																	<i className="bi bi-mic-mute"></i>
+																</button>
+																: 
+																<button className="btn control-circle" onClick={()=>muteMySelf()}>
+																	<i className="bi bi-mic"></i>
+																</button>
+															}
+															{/* <button className="btn control-circle-client" onClick={()=>muteMySelf()}>
 																<i className={muted?"bi bi-mic-mute": "bi bi-mic"}></i>
-															</button>
+															</button> */}
 															<button className="btn control-circle-red-client" onClick={ () => leaveCall()}>
 																<i className="bi bi-telephone-fill"></i>
 															</button>
