@@ -1635,6 +1635,13 @@ a.sidebar-link:hover {
     height: 100px!important;
 }
 
+.profile-overlay-client div {
+  position: absolute;
+  top: 0;
+  left: 17px;
+  width: 20px!important;
+  height: 20px!important;
+}
   .client-video-container {
     position: relative;
     border-radius: 10px;

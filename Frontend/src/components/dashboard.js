@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react"
 import {useLocation, useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import Peer from "simple-peer"
 import io from "socket.io-client"
-
+import Avatar from '@mui/material/Avatar';
 import Navbar from './navbar.js'
 import Header from './header.js'
 import OpenAI from 'openai';
@@ -99,7 +99,15 @@ function Dashboard() {
 	const [muteDealer, setMuteDealer] = useState(false);
 	const [muteClient, setMuteClient] = useState(false);
 	const [stream,setStream] = useState(null);
+	const [clientStream,setClientStream] = useState(null);
+	const [salesPersonStream,setSalesPersonStream] = useState(null);
+	const [dealerStream,setDealerStream] = useState(null);
 	const [webCamStatus, setWebCamStatus] = useState(true);
+	
+	const [hideClientVideo, setHideClientVideo] = useState(false);
+	const [hideSalesPersonVideo, setHideSalesPersonVideo] = useState(false);
+	const [hideDealerVideo, setHideDealerVideo] = useState(false);
+	
 	//console.log(peers)
 	//console.log(ClientPeers)
 	
@@ -142,7 +150,7 @@ function Dashboard() {
 				const client_peers = [];
 				const dealer_peers = [];
                 users.forEach(obj => {
-					console.log(`146--> ${JSON.stringify(obj.mutedAudio)}`);
+					console.log(`146--> ${JSON.stringify(obj.audio)}`);
                     const peer = createPeer(obj.id, socketRef.current.id, stream, obj.role);
                     peersRef.current.push({
                         peerID: obj.id,
@@ -155,17 +163,18 @@ function Dashboard() {
 						})
 						setSalespersonSocketId(obj.id)
 						peers.push(peer);
-						setMuteSalesPerson(obj.mutedAudio);
+						setMuteSalesPerson(!obj.audio);
 						doContinuousRecognition()
 					}
 					else if(obj.role == "Client"){
 						peer.on("stream", stream => {
 							clientVideo.current.srcObject = stream;
+							setClientStream(stream)
 						})
 						client_peers.push(peer);
 						//delay(3000)
 						loadModels();
-						setMuteClient(obj.mutedAudio)
+						setMuteClient(!obj.audio)
 						doContinuousRecognition()
 					}
 					else if(obj.role == "Dealer"){
@@ -173,7 +182,7 @@ function Dashboard() {
 							dealerVideo.current.srcObject = stream;
 						})
 						dealer_peers.push(peer);
-						setMuteDealer(obj.mutedAudio)
+						setMuteDealer(!obj.audio)
 						//delay(3000)
 						//loadModels()
 						//doContinuousRecognition()
@@ -194,6 +203,7 @@ function Dashboard() {
 				if(payload.role == "SalesPerson"){
 					peer.on("stream", stream => {
 						salespersonVideo.current.srcObject = stream;
+						setSalesPersonStream(stream)
 						console.log(salespersonVideo)
 					})
 					setSalespersonSocketId(payload.callerID)
@@ -203,6 +213,7 @@ function Dashboard() {
 				else if(payload.role == "Client"){
 					peer.on("stream", stream => {
 						clientVideo.current.srcObject = stream;
+						setClientStream(stream)
 					})
 					setClientPeers(users => [...users, peer]);
 					//delay(3000)
@@ -212,6 +223,7 @@ function Dashboard() {
 				else if(payload.role == "Dealer"){
 					peer.on("stream", stream => {
 						dealerVideo.current.srcObject = stream;
+						setDealerStream(stream)
 					})
 					setDealerPeers(users => [...users, peer]);
 					//delay(3000)
@@ -246,6 +258,24 @@ function Dashboard() {
 				}
 			})
 
+			socketRef.current.on("hide:user",(data)=>{
+				console.log(`250--> ${JSON.stringify(data)}`);
+				let track = clientVideo.current.srcObject.getTracks()[1];
+				console.log(track);
+				track.enabled = false;
+				// if(data.person === "Client"){
+				// 	let track = clientVideo.current.srcObject.getTracks()[1];;
+				// 	console.log(track);
+				// }
+			})
+
+			socketRef.current.on("show:user",(data)=>{
+				console.log(`250--> ${JSON.stringify(data)}`);
+				let track = clientVideo.current.srcObject.getTracks()[1];
+				console.log(track);
+				track.enabled = true;
+			})
+
 			socketRef.current.on("disconnected",()=>{
 				console.log("user-disconnected")
 				navigate("/");
@@ -266,6 +296,18 @@ function Dashboard() {
 		
 
 	}, [])
+
+	function reconnectWithPeer(person){
+		var peer = new Peer({
+			initiator: false,
+			trickle: false,
+			stream: stream
+		});
+		peer.on("stream",(stream)=>{
+			clientVideo.current.srcObject = stream;
+			setClientStream(stream);
+		});
+	}
 
 	const leaveCall = () => {
 		socketRef.current.emit("disconnectUser", roomID);
@@ -306,7 +348,7 @@ function Dashboard() {
 			//console.log(text)
 
 			document.getElementById("aidivspeech").innerHTML +=
-			`<div class="pt-4">
+			`<div className="pt-4">
 				<span>
 					${text}
 				</span>
@@ -450,9 +492,9 @@ function Dashboard() {
 				var value = $bar.data("value");
 				var color = $bar.data("color");
 		
-				var barHtml = '<div class="progress-line"><span style="width: ' + value + '%; background: ' + color + ';"></span></div>';
-				var labelHtml = '<div class="info"><span>' + label + '</span></div>';
-				var valueHtml = '<div class="value-display">' + value + '</div>';
+				var barHtml = '<div className="progress-line"><span style="width: ' + value + '%; background: ' + color + ';"></span></div>';
+				var labelHtml = '<div className="info"><span>' + label + '</span></div>';
+				var valueHtml = '<div className="value-display">' + value + '</div>';
 		
 				$bar.html(labelHtml + barHtml + valueHtml);
 			});
@@ -502,7 +544,7 @@ function Dashboard() {
 					console.log(`471--> ${JSON.stringify(data)}`)
 					
 					document.getElementById("speech-container").innerHTML += 
-					`<div class="client-speech speech-bubble">
+					`<div className="client-speech speech-bubble">
 					<p style="font-size: 10px; margin-bottom: 0.1rem">${data.userType}</p>
 						<p style="font-size: 10px; margin-bottom: 0.1rem">${data.message.replace(/(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/, '$1$2')}</p>
 						<p style="font-size: 8px; margin-bottom: 0.1rem; text-align: right; padding-left: 15px">${data.time}</p>
@@ -767,7 +809,7 @@ function Dashboard() {
 						minute: '2-digit'
 					}).toLowerCase();
 					document.getElementById("speech-container").innerHTML += 
-					`<div class="salesman-speech speech-bubble">
+					`<div className="salesman-speech speech-bubble">
 					<p style="font-size: 10px; margin-bottom: 0.1rem">Salesman</p>
 						<p style="font-size: 10px; margin-bottom: 0.1rem">${result.text.replace(/(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/, '$1$2')}</p>
 						<p style="font-size: 8px; margin-bottom: 0.1rem; text-align: right; padding-left: 15px;">${time}</p>
@@ -849,9 +891,9 @@ function Dashboard() {
 								if(expressionNumber == 0){
 									expressionNumber = 1
 								}
-								var barHtml = '<div class="progress-line"><span style="width: ' + expressionNumber + '%; background: ' + "#712cf9" + ';"></span></div>';
-								var labelHtml = '<div class="info"><span>Happy</span></div>';
-								var valueHtml = '<div class="value-display">' + expressionNumber + '</div>';
+								var barHtml = '<div className="progress-line"><span style="width: ' + expressionNumber + '%; background: ' + "#712cf9" + ';"></span></div>';
+								var labelHtml = '<div className="info"><span>Happy</span></div>';
+								var valueHtml = '<div className="value-display">' + expressionNumber + '</div>';
 
 								document.getElementById("happy").innerHTML = labelHtml + barHtml + valueHtml
 							}
@@ -860,9 +902,9 @@ function Dashboard() {
 								if(expressionNumber == 0){
 									expressionNumber = 1
 								}
-								var barHtml = '<div class="progress-line"><span style="width: ' + expressionNumber + '%; background: ' + "#FFA500" + ';"></span></div>';
-								var labelHtml = '<div class="info"><span>' + "Sad" + '</span></div>';
-								var valueHtml = '<div class="value-display">' + expressionNumber + '</div>';
+								var barHtml = '<div className="progress-line"><span style="width: ' + expressionNumber + '%; background: ' + "#FFA500" + ';"></span></div>';
+								var labelHtml = '<div className="info"><span>' + "Sad" + '</span></div>';
+								var valueHtml = '<div className="value-display">' + expressionNumber + '</div>';
 
 								document.getElementById("sad").innerHTML = labelHtml + barHtml + valueHtml
 							}
@@ -871,9 +913,9 @@ function Dashboard() {
 								if(expressionNumber == 0){
 									expressionNumber = 1
 								}
-								var barHtml = '<div class="progress-line"><span style="width: ' + expressionNumber + '%; background: ' + "#cc1717" + ';"></span></div>';
-								var labelHtml = '<div class="info"><span>' + "Angry" + '</span></div>';
-								var valueHtml = '<div class="value-display">' + expressionNumber + '</div>';
+								var barHtml = '<div className="progress-line"><span style="width: ' + expressionNumber + '%; background: ' + "#cc1717" + ';"></span></div>';
+								var labelHtml = '<div className="info"><span>' + "Angry" + '</span></div>';
+								var valueHtml = '<div className="value-display">' + expressionNumber + '</div>';
 
 								document.getElementById("angry").innerHTML = labelHtml + barHtml + valueHtml
 							}
@@ -882,9 +924,9 @@ function Dashboard() {
 								if(expressionNumber == 0){
 									expressionNumber = 1
 								}
-								var barHtml = '<div class="progress-line"><span style="width: ' + expressionNumber + '%; background: ' + "#cc1717" + ';"></span></div>';
-								var labelHtml = '<div class="info"><span>' + "Disgusted" + '</span></div>';
-								var valueHtml = '<div class="value-display">' + expressionNumber + '</div>';
+								var barHtml = '<div className="progress-line"><span style="width: ' + expressionNumber + '%; background: ' + "#cc1717" + ';"></span></div>';
+								var labelHtml = '<div className="info"><span>' + "Disgusted" + '</span></div>';
+								var valueHtml = '<div className="value-display">' + expressionNumber + '</div>';
 
 								document.getElementById("disgusted").innerHTML = labelHtml + barHtml + valueHtml
 							}
@@ -893,9 +935,9 @@ function Dashboard() {
 								if(expressionNumber == 0){
 									expressionNumber = 1
 								}
-								var barHtml = '<div class="progress-line"><span style="width: ' + expressionNumber + '%; background: ' + "#712cf9" + ';"></span></div>';
-								var labelHtml = '<div class="info"><span>' + "Neutral" + '</span></div>';
-								var valueHtml = '<div class="value-display">' + expressionNumber + '</div>';
+								var barHtml = '<div className="progress-line"><span style="width: ' + expressionNumber + '%; background: ' + "#712cf9" + ';"></span></div>';
+								var labelHtml = '<div className="info"><span>' + "Neutral" + '</span></div>';
+								var valueHtml = '<div className="value-display">' + expressionNumber + '</div>';
 
 								document.getElementById("neutral").innerHTML = labelHtml + barHtml + valueHtml
 							}
@@ -904,9 +946,9 @@ function Dashboard() {
 								if(expressionNumber == 0){
 									expressionNumber = 1
 								}
-								var barHtml = '<div class="progress-line"><span style="width: ' + expressionNumber + '%; background: ' + "#712cf9" + ';"></span></div>';
-								var labelHtml = '<div class="info"><span>' + "Surprised" + '</span></div>';
-								var valueHtml = '<div class="value-display">' + expressionNumber + '</div>';
+								var barHtml = '<div className="progress-line"><span style="width: ' + expressionNumber + '%; background: ' + "#712cf9" + ';"></span></div>';
+								var labelHtml = '<div className="info"><span>' + "Surprised" + '</span></div>';
+								var valueHtml = '<div className="value-display">' + expressionNumber + '</div>';
 
 								document.getElementById("surprised").innerHTML = labelHtml + barHtml + valueHtml
 							}
@@ -915,9 +957,9 @@ function Dashboard() {
 								if(expressionNumber == 0){
 									expressionNumber = 1
 								}
-								var barHtml = '<div class="progress-line"><span style="width: ' + expressionNumber + '%; background: ' + "#FFA500" + ';"></span></div>';
-								var labelHtml = '<div class="info"><span>' + "Fearful" + '</span></div>';
-								var valueHtml = '<div class="value-display">' + expressionNumber + '</div>';
+								var barHtml = '<div className="progress-line"><span style="width: ' + expressionNumber + '%; background: ' + "#FFA500" + ';"></span></div>';
+								var labelHtml = '<div className="info"><span>' + "Fearful" + '</span></div>';
+								var valueHtml = '<div className="value-display">' + expressionNumber + '</div>';
 
 								document.getElementById("fearful").innerHTML = labelHtml + barHtml + valueHtml
 							}
@@ -977,10 +1019,23 @@ function Dashboard() {
 		doContinuousRecognition();
 	}
 	const toggleVideo = ()=>{
-		setWebCamStatus(false);
-		
-	}
+		console.log("Function Called");
+		setWebCamStatus(!webCamStatus);
+		let track = stream.getTracks()[1];
+		console.log(track);
+		console.log(webCamStatus);
+		if(webCamStatus){
+			track.enabled = false;
+			console.log(userVideo);
+					} else {
+			track.enabled = true;
+			console.log(userVideo);
+			setWebCamStatus(true)
+		}
 
+	}
+	
+	// const isCameraOff = stream.getTracks()[1].enabled;
   return (
 	/*
 	<div>
@@ -1046,14 +1101,16 @@ function Dashboard() {
 
 												<div className="salesman-video-container">
 													<div className="salesman-video">
-														{ClientPeers.map((peer, index) => {
+													{ClientPeers.map((peer, index) => {
 																return (
 																	<div key={index} className="client-video-1" >
-																		<video playsInline muted={muteClient} ref={clientVideo} autoPlay></video>
+																	<video playsInline muted={muteClient} ref={clientVideo} autoPlay></video>
+																	
 																	</div>
 																);
 														})}
 													</div>
+												
 													<div className="profile-overlay-salesman">
 														{
 															userVideo &&
@@ -1100,9 +1157,16 @@ function Dashboard() {
 														<button className="btn control-circle-red" onClick={() => leaveCall()}>
 															<i className="bi bi-telephone-fill"></i>
 														</button>
-														<button class ="btn control-circle" onClick={()=>toggleVideo()}>
-															<i className="bi bi-camera-video"></i>
-														</button>
+														{
+															webCamStatus?
+															<button class ="btn control-circle-client" onClick={()=>toggleVideo()}>
+																<i className="bi bi-camera-video"></i>
+															</button>
+															:
+															<button class ="btn control-circle-client" onClick={()=>toggleVideo()}>
+																<i className="bi bi-camera-video-off"></i>
+															</button>
+														}
 														<button className="btn control-circle">
 															<i className="bi bi-people"></i>
 														</button>
@@ -1214,7 +1278,7 @@ function Dashboard() {
 											<div className="col-lg-12 col-md-12 col-sm-12">
 												<div className="card">
 													
-													<div class="client-video-container">
+													<div className="client-video-container">
 														
 														{
 															//(peers.length == 1) &&
@@ -1243,13 +1307,15 @@ function Dashboard() {
 														}
 														
 														
-														<div class="profile-overlay-client">
-															{
-																userVideo &&
-																<video playsInline muted={muted} ref={userVideo} autoPlay loop>
+														<div className="profile-overlay-client">
+														{
+															userVideo &&	
+															<video playsInline muted={muted} ref={userVideo} autoPlay loop>
 																</video>
-															}
+															
+														}
 														</div>
+														
 													</div>
 
 													<div className="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
@@ -1273,9 +1339,16 @@ function Dashboard() {
 															<button className="btn control-circle-red-client" onClick={ () => leaveCall()}>
 																<i className="bi bi-telephone-fill"></i>
 															</button>
-															<button class ="btn control-circle-client">
-																<i className="bi bi-camera-video"></i>
-															</button>
+															{
+																webCamStatus?
+																<button class ="btn control-circle-client" onClick={()=>toggleVideo()}>
+																	<i className="bi bi-camera-video"></i>
+																</button>
+																:
+																<button class ="btn control-circle-client" onClick={()=>toggleVideo()}>
+																	<i className="bi bi-camera-video-off"></i>
+																</button>
+															}
 															<button className="btn control-circle-client">
 																<i className="bi bi-people"></i>
 															</button>
@@ -1300,7 +1373,7 @@ function Dashboard() {
 											<div className="col-lg-12 col-md-12 col-sm-12">
 												<div className="card">
 													
-													<div class="client-video-container">
+													<div className="client-video-container">
 														
 														{
 															//(peers.length == 1) &&
@@ -1329,7 +1402,7 @@ function Dashboard() {
 														}
 														
 														
-														<div class="profile-overlay-client">
+														<div className="profile-overlay-client">
 															{
 																userVideo &&
 																<video playsInline muted={muted} ref={userVideo}  autoPlay loop>
@@ -1359,9 +1432,16 @@ function Dashboard() {
 															<button className="btn control-circle-red-client" onClick={ () => leaveCall()}>
 																<i className="bi bi-telephone-fill"></i>
 															</button>
-															<button class ="btn control-circle-client">
-																<i className="bi bi-camera-video"></i>
-															</button>
+															{
+																webCamStatus?
+																<button class ="btn control-circle-client" onClick={()=>toggleVideo()}>
+																	<i className="bi bi-camera-video"></i>
+																</button>
+																:
+																<button class ="btn control-circle-client" onClick={()=>toggleVideo()}>
+																	<i className="bi bi-camera-video-off"></i>
+																</button>
+															}
 															<button className="btn control-circle-client">
 																<i className="bi bi-people"></i>
 															</button>

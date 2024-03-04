@@ -365,14 +365,14 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
                     return;
                 }
                 //users[roomID].push(socket.id);
-                users[roomID].push({"id": socket.id, "email" : email, "role" : person, "mutedAudio": false,"video": true});
+                users[roomID].push({"id": socket.id, "email" : email, "role" : person, "audio": true,"video": true});
             } else {
                 //users[roomID] = [socket.id];
-                users[roomID] = [{"id": socket.id, "email" : email, "role" : person, "mutedAudio": false, "video": true}];
+                users[roomID] = [{"id": socket.id, "email" : email, "role" : person, "audio": true, "video": true}];
             }
             socketToRoom[socket.id] = roomID;
             socket.join(roomID);
-            console.log(`375--> ${socket.id}, ${person}`);
+            // console.log(`375--> ${socket.id}, ${person}`);
             //const usersInThisRoom = users[roomID].filter(id => id !== socket.id);
             const usersInThisRoom = users[roomID].filter(obj => obj.id !== socket.id);
             // console.log(usersInThisRoom)
@@ -380,9 +380,7 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
         });
     
         socket.on("mute:me",(data)=>{
-            let usersInThisRoom = users[data.roomID].find(obj => obj.id === socket.id).mutedAudio = true;
-    
-            console.log(`383--> ${JSON.stringify(users[data.roomID])}`);
+            users[data.roomID].find(obj => obj.id === socket.id).audio = false;
             socket.to(data.roomID).emit("mute:user",{person: data.person})
         });
 
@@ -407,7 +405,17 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
             // sending to all clients in 'game' room, including sender
             
             io.in(data.to).emit("sendMSGToSalesmen", { to: data.to, message : data.message, time: data.time, userType: data.person });
-        })
+        });
+
+        socket.on("hide:me",(data)=>{
+            console.log(`413--> ${JSON.stringify(data)}`);
+            socket.to(data.roomID).emit("hide:user",{person: data.role,id: socket.id})
+        });
+
+        socket.on("show:me",(data)=>{
+            console.log(`413--> ${JSON.stringify(data)}`);
+            socket.to(data.roomID).emit("show:user",{person: data.role,id: socket.id})
+        });
     
         socket.on('disconnectUser', async (data) => {
             const roomID = socketToRoom[socket.id];
