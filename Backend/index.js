@@ -398,12 +398,7 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
         });
 
         socket.on("sendMSG", (data) => {
-            // console.log(data.person)
-            //io.to(data.to).emit("sendMSGToSalesmen", { to: data.to, message : data.message })
-            //socket.emit("sendMSGToSalesmen", { to: data.to, message : data.message });
-            //socket.broadcast.emit("sendMSGToSalesmen", { to: data.to, message : data.message })
-            // sending to all clients in 'game' room, including sender
-            
+            console.log(`${JSON.stringify(data)}`)
             io.in(data.to).emit("sendMSGToSalesmen", { to: data.to, message : data.message, time: data.time, userType: data.person });
         });
 

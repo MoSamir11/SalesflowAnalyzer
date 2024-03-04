@@ -106,9 +106,9 @@ function Salesmen() {
             	<div className="row pt-res">
             		<div className="col-lg-12 col-md-12 col-sm-12">
             			<div className="">
-                  <h1>SalesFlow Analyzer</h1>
+                  <h1>MagicCX</h1>
             				<p className="pt-4">We re-engineered the service we built for secure business meetings.
-                    <br/><b>SalesFlow Analyzer</b>, AI Companion is your trusted digital assistant that empowers you. </p>
+                    <br/><b>MagicCX</b>, AI Companion is your trusted digital assistant that empowers you. </p>
             			</div>
             		</div>
             	</div>

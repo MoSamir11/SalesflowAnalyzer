@@ -138,8 +138,8 @@ function Dashboard() {
   	let authorizationToken = undefined;
 
   	useEffect( () => {
-		//socketRef.current = io.connect("http://localhost:3001");
-		socketRef.current = io.connect("https://magiccx-backend.azurewebsites.net");
+		socketRef.current = io.connect("http://localhost:3001");
+		// socketRef.current = io.connect("https://magiccx-backend.azurewebsites.net");
 
         navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
             userVideo.current.srcObject = stream;
@@ -545,7 +545,7 @@ function Dashboard() {
 					
 					document.getElementById("speech-container").innerHTML += 
 					`<div class="client-speech speech-bubble">
-					<p style="font-size: 11px; margin-bottom: 0.18rem; font-weight: bold; color: #28a745">${data.userType}</p>
+					<p style="font-size: 11px; margin-bottom: 0.18rem; font-weight: bold; color: #e542a3">${data.userType}</p>
 						<p style="font-size: 10px; margin-bottom: 0.1rem">${data.message.replace(/(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/, '$1$2')}</p>
 						<p style="font-size: 8px; margin-bottom: 0.1rem; text-align: right; padding-left: 15px">${data.time}</p>
 					</div>`
@@ -571,7 +571,7 @@ function Dashboard() {
 				})
 			}
 		}
-	}, [person])
+	}, [socketRef])
 
 	const SentimentRecognition = async (inputtext) => {
 		const options = {
@@ -701,12 +701,12 @@ function Dashboard() {
 		// Create the SpeechRecognizer and set up common event handlers and PhraseList data
 		reco = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
 		//console.log(reco)
-		applyCommonConfigurationTo(reco);
+		// applyCommonConfigurationTo(reco);
 
 		// Start the continuous recognition. Note that, in this continuous scenario, activity is purely event-
 		// driven, as use of continuation (as is in the single-shot sample) isn't applicable when there's not a
 		// single result.
-		reco.startContinuousRecognitionAsync();
+		// reco.stopContinuousRecognition;
 	}
 
 	function applyCommonConfigurationTo(recognizer) {
@@ -773,7 +773,7 @@ function Dashboard() {
 
 		//console.log(person)
 
-		if(person == "Client" || person == "Dealer"){
+		if(person == "Client"){
 			switch (result.reason) {
 				case SpeechSDK.ResultReason.NoMatch:
 				case SpeechSDK.ResultReason.Canceled:
@@ -781,7 +781,27 @@ function Dashboard() {
 					//console.log("Client",result.text)
 					
 					//socketRef.current.emit("sendMSG", { to: caller, message: result.text })
-					console.log("sendMSG", { to: roomID, message: result.text, person: person});
+					// console.log("sendMSG", { to: roomID, message: result.text, person: person});
+					let date = new Date();
+					let time = date.toLocaleString([],{
+						hour: 'numeric',
+						minute: '2-digit'
+					}).toLowerCase()
+					socketRef.current.emit("sendMSG", { to: roomID, message: result.text, time: time,person: person });
+
+					break;
+				case SpeechSDK.ResultReason.TranslatedSpeech:
+				case SpeechSDK.ResultReason.RecognizedIntent:
+			}
+		} else if(person == "Dealer"){
+			switch (result.reason) {
+				case SpeechSDK.ResultReason.NoMatch:
+				case SpeechSDK.ResultReason.Canceled:
+				case SpeechSDK.ResultReason.RecognizedSpeech:
+					//console.log("Client",result.text)
+					
+					//socketRef.current.emit("sendMSG", { to: caller, message: result.text })
+					// console.log("sendMSG", { to: roomID, message: result.text, person: person});
 					let date = new Date();
 					let time = date.toLocaleString([],{
 						hour: 'numeric',
@@ -1008,7 +1028,7 @@ function Dashboard() {
 		console.log(`942--> ${muted}`);
 		// if(muted==true){
 			socketRef.current.emit("mute:me",{roomID, person })
-			stopContinuousRecognition();
+			// stopContinuousRecognition();
 		// } else {
 		// 	socketRef.current.emit("mute:me",{roomID, person })
 		// }
