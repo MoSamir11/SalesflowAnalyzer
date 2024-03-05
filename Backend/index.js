@@ -381,7 +381,8 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
     
         socket.on("mute:me",(data)=>{
             users[data.roomID].find(obj => obj.id === socket.id).audio = false;
-            socket.to(data.roomID).emit("mute:user",{person: data.person})
+            console.log(`384--> ${users[data.roomID].find(obj => obj.id === socket.id).audio}`);
+            socket.to(data.roomID).emit("mute:user",{person: data.person, sentiment: data.sentiment})
         });
 
         socket.on("unmute:me",(data)=>{
@@ -398,17 +399,17 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
         });
 
         socket.on("sendMSG", (data) => {
-            console.log(`${JSON.stringify(data)}`)
-            io.in(data.to).emit("sendMSGToSalesmen", { to: data.to, message : data.message, time: data.time, userType: data.person });
+            // console.log(`${JSON.stringify(data)}`)
+            io.in(data.to).emit("sendMSGToSalesmen", { to: data.to, message : data.message, time: data.time, userType: data.person, sentiment: data.sentiment });
         });
 
         socket.on("hide:me",(data)=>{
-            console.log(`413--> ${JSON.stringify(data)}`);
+            // console.log(`413--> ${JSON.stringify(data)}`);
             socket.to(data.roomID).emit("hide:user",{person: data.role,id: socket.id})
         });
 
         socket.on("show:me",(data)=>{
-            console.log(`413--> ${JSON.stringify(data)}`);
+            // console.log(`413--> ${JSON.stringify(data)}`);
             socket.to(data.roomID).emit("show:user",{person: data.role,id: socket.id})
         });
     
@@ -417,7 +418,7 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
             let room = users[roomID];
             if (room) {
                 room = room.filter(obj => obj.id !== socket.id);
-                console.log(room)
+                // console.log(room)
                 users[roomID] = room;
             }
             //io.sockets.socket(socket.id).disconnect();

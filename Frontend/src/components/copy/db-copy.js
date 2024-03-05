@@ -685,7 +685,7 @@ function Dashboard() {
 
 		//console.log(person)
 
-		if(person == "Client" || person == "Dealer"){
+		if(person == "Client"){
 			switch (result.reason) {
 				case SpeechSDK.ResultReason.NoMatch:
 				case SpeechSDK.ResultReason.Canceled:
@@ -693,7 +693,7 @@ function Dashboard() {
 					//console.log("Client",result.text)
 					
 					//socketRef.current.emit("sendMSG", { to: caller, message: result.text })
-					console.log("sendMSG", { to: roomID, message: result.text, person: person});
+					// console.log("sendMSG", { to: roomID, message: result.text, person: person});
 					let date = new Date();
 					let time = date.toLocaleString([],{
 						hour: 'numeric',
@@ -706,7 +706,7 @@ function Dashboard() {
 				case SpeechSDK.ResultReason.RecognizedIntent:
 			}
 		}
-		else if(person == "SalesPerson") {
+		else {
 			//phraseDiv.scrollTop = phraseDiv.scrollHeight;
 			//phraseDiv.innerHTML = phraseDiv.innerHTML.replace(/(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/, '$1$2');
 

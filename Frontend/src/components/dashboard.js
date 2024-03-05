@@ -164,7 +164,7 @@ function Dashboard() {
 						setSalespersonSocketId(obj.id)
 						peers.push(peer);
 						setMuteSalesPerson(!obj.audio);
-						doContinuousRecognition()
+						// doContinuousRecognition()
 					}
 					else if(obj.role == "Client"){
 						peer.on("stream", stream => {
@@ -185,8 +185,9 @@ function Dashboard() {
 						setMuteDealer(!obj.audio)
 						//delay(3000)
 						//loadModels()
-						//doContinuousRecognition()
+						// doContinuousRecognition()
 					}
+					// doContinuousRecognition()
                 })
                 setPeers(peers);
 				setClientPeers(client_peers);
@@ -547,7 +548,7 @@ function Dashboard() {
 					`<div class="client-speech speech-bubble">
 					<p style="font-size: 11px; margin-bottom: 0.18rem; font-weight: bold; color: #e542a3">${data.userType}</p>
 						<p style="font-size: 10px; margin-bottom: 0.1rem">${data.message.replace(/(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/, '$1$2')}</p>
-						<p style="font-size: 8px; margin-bottom: 0.1rem; text-align: right; padding-left: 15px">${data.time}</p>
+						<p style="font-size: 8px; margin-bottom: 0.1rem; text-align: right; padding-left: 15px">${data.time} ${data.sentiment}</p>
 					</div>`
 					document.getElementById("speech-container").scrollTop = document.getElementById("speech-container").scrollHeight;
 					
@@ -585,8 +586,8 @@ function Dashboard() {
 		
 		try {
 			const response = await axios.request(options);
-			//console.log(response.data);
-			return(response.data)
+			console.log(`827--> 3 ${JSON.stringify(response.data)}, ${inputtext}`);
+			return response.data
 		} 
 		catch (error) {
 			console.error(error);
@@ -682,6 +683,7 @@ function Dashboard() {
 
 		// Create the SpeechRecognizer and set up common event handlers and PhraseList data
 		reco = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+		
 		//console.log(reco)
 		applyCommonConfigurationTo(reco);
 
@@ -691,23 +693,7 @@ function Dashboard() {
 		reco.startContinuousRecognitionAsync();
 	}
 
-	function stopContinuousRecognition() {
-		
-		var audioConfig = getAudioConfig();
-		var speechConfig = getSpeechConfig(SpeechSDK.SpeechConfig);
-		//console.log(speechConfig)
-		if (!speechConfig) return;
 
-		// Create the SpeechRecognizer and set up common event handlers and PhraseList data
-		reco = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
-		//console.log(reco)
-		// applyCommonConfigurationTo(reco);
-
-		// Start the continuous recognition. Note that, in this continuous scenario, activity is purely event-
-		// driven, as use of continuation (as is in the single-shot sample) isn't applicable when there's not a
-		// single result.
-		// reco.stopContinuousRecognition;
-	}
 
 	function applyCommonConfigurationTo(recognizer) {
 		// The 'recognizing' event signals that an intermediate recognition result is received.
@@ -763,58 +749,19 @@ function Dashboard() {
 		onRecognizedResult(recognitionEventArgs.result);
 	}
 
-	function onRecognizedResult(result) {
+	async function onRecognizedResult(result) {
+		console.log(`827--> Called`);
 		//console.log(result.reason == SpeechSDK.ResultReason.RecognizedSpeech)
 		console.log(result.text)
 		//console.log(person)
 		if(!result.text){
 			return
 		}
-
+		var sentiment = await SentimentRecognition(result.text);
+		console.log(`827--> 1 ${JSON.stringify(sentiment)}, ${result.text}`);
 		//console.log(person)
 
-		if(person == "Client"){
-			switch (result.reason) {
-				case SpeechSDK.ResultReason.NoMatch:
-				case SpeechSDK.ResultReason.Canceled:
-				case SpeechSDK.ResultReason.RecognizedSpeech:
-					//console.log("Client",result.text)
-					
-					//socketRef.current.emit("sendMSG", { to: caller, message: result.text })
-					// console.log("sendMSG", { to: roomID, message: result.text, person: person});
-					let date = new Date();
-					let time = date.toLocaleString([],{
-						hour: 'numeric',
-						minute: '2-digit'
-					}).toLowerCase()
-					socketRef.current.emit("sendMSG", { to: roomID, message: result.text, time: time,person: person });
-
-					break;
-				case SpeechSDK.ResultReason.TranslatedSpeech:
-				case SpeechSDK.ResultReason.RecognizedIntent:
-			}
-		} else if(person == "Dealer"){
-			switch (result.reason) {
-				case SpeechSDK.ResultReason.NoMatch:
-				case SpeechSDK.ResultReason.Canceled:
-				case SpeechSDK.ResultReason.RecognizedSpeech:
-					//console.log("Client",result.text)
-					
-					//socketRef.current.emit("sendMSG", { to: caller, message: result.text })
-					// console.log("sendMSG", { to: roomID, message: result.text, person: person});
-					let date = new Date();
-					let time = date.toLocaleString([],{
-						hour: 'numeric',
-						minute: '2-digit'
-					}).toLowerCase()
-					socketRef.current.emit("sendMSG", { to: roomID, message: result.text, time: time,person: person });
-
-					break;
-				case SpeechSDK.ResultReason.TranslatedSpeech:
-				case SpeechSDK.ResultReason.RecognizedIntent:
-			}
-		}
-		else if(person == "SalesPerson") {
+		if(person == "SalesPerson") {
 			//phraseDiv.scrollTop = phraseDiv.scrollHeight;
 			//phraseDiv.innerHTML = phraseDiv.innerHTML.replace(/(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/, '$1$2');
 
@@ -830,7 +777,7 @@ function Dashboard() {
 					}).toLowerCase();
 					document.getElementById("speech-container").innerHTML += 
 					`<div class="salesman-speech speech-bubble">
-					<p style="font-size: 11px; margin-bottom: 0.18rem; font-weight: bold; color: #ffc107">Salesman</p>
+					<p style="font-size: 11px; margin-bottom: 0.18rem; font-weight: bold; color: #ffc107">You</p>
 						<p style="font-size: 10px; margin-bottom: 0.1rem">${result.text.replace(/(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/, '$1$2')}</p>
 						<p style="font-size: 8px; margin-bottom: 0.1rem; text-align: right; padding-left: 15px;">${time}</p>
 					</div>`
@@ -868,7 +815,24 @@ function Dashboard() {
 				case SpeechSDK.ResultReason.TranslatedSpeech:
 				case SpeechSDK.ResultReason.RecognizedIntent:
 			}
-		}
+		} else{
+			switch (result.reason) {
+				case SpeechSDK.ResultReason.NoMatch:
+				case SpeechSDK.ResultReason.Canceled:
+				case SpeechSDK.ResultReason.RecognizedSpeech:
+					let date = new Date();
+					let time = date.toLocaleString([],{
+						hour: 'numeric',
+						minute: '2-digit'
+					}).toLowerCase();
+					let capitalizedSentiment = sentiment.overall_sentiment.charAt(0).toUpperCase() + sentiment.overall_sentiment.slice(1)
+					socketRef.current.emit("sendMSG", { to: roomID, message: result.text, time: time,person: person, sentiment: capitalizedSentiment });
+
+					break;
+				case SpeechSDK.ResultReason.TranslatedSpeech:
+				case SpeechSDK.ResultReason.RecognizedIntent:
+			}
+		} 
 	}
 
 	function onSessionStarted(sender, sessionEventArgs) {	
@@ -1036,7 +1000,7 @@ function Dashboard() {
 	const unmuteMySelf = ()=>{
 		setMuted(!muted);
 		socketRef.current.emit("unmute:me",{roomID, person });
-		doContinuousRecognition();
+		// doContinuousRecognition();
 	}
 	const toggleVideo = ()=>{
 		console.log("Function Called");
@@ -1047,14 +1011,18 @@ function Dashboard() {
 		if(webCamStatus){
 			track.enabled = false;
 			console.log(userVideo);
-					} else {
+		} else {
 			track.enabled = true;
 			console.log(userVideo);
-			setWebCamStatus(true)
+			setWebCamStatus(true);
+			// navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+			// 	userVideo.current.srcObject = stream;
+			// 	setStream(stream)
+			// });
 		}
 
 	}
-	
+	console.log(clientVideo.current.srcObject);
 	// const isCameraOff = stream.getTracks()[1].enabled;
   return (
 	/*
@@ -1329,6 +1297,7 @@ function Dashboard() {
 														
 														<div className="profile-overlay-client">
 														{
+															
 															userVideo &&	
 															<video playsInline muted={muted} ref={userVideo} autoPlay loop>
 																</video>

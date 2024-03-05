@@ -482,21 +482,8 @@ function Dashboard(props) {
 
 		//console.log(person)
 
-		if(person == "Client"){
-			switch (result.reason) {
-				case SpeechSDK.ResultReason.NoMatch:
-				case SpeechSDK.ResultReason.Canceled:
-				case SpeechSDK.ResultReason.RecognizedSpeech:
-					//console.log("Client",result.text)
-					
-					socket.emit("sendMSG", { to: caller, message: result.text })
-
-					break;
-				case SpeechSDK.ResultReason.TranslatedSpeech:
-				case SpeechSDK.ResultReason.RecognizedIntent:
-			}
-		}
-		else {
+		
+		if(person == "SalesPerson") {
 			//phraseDiv.scrollTop = phraseDiv.scrollHeight;
 			//phraseDiv.innerHTML = phraseDiv.innerHTML.replace(/(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/, '$1$2');
 
@@ -538,6 +525,19 @@ function Dashboard(props) {
 
 					//console.log(expressions_transcript)
 					
+
+					break;
+				case SpeechSDK.ResultReason.TranslatedSpeech:
+				case SpeechSDK.ResultReason.RecognizedIntent:
+			}
+		} else {
+			switch (result.reason) {
+				case SpeechSDK.ResultReason.NoMatch:
+				case SpeechSDK.ResultReason.Canceled:
+				case SpeechSDK.ResultReason.RecognizedSpeech:
+					//console.log("Client",result.text)
+					
+					socket.emit("sendMSG", { to: caller, message: result.text })
 
 					break;
 				case SpeechSDK.ResultReason.TranslatedSpeech:
