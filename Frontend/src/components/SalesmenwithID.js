@@ -36,7 +36,7 @@ function SalesmenWithID() {
             <nav className="navbar navbar-expand-lg bg-body-tertiary border-bottom">
               <div className="container-fluid">
                   <div className="index-logo p-2">
-                      <a href="#">Magic <span>CX</span></a>
+                      <a href="#">magic<span>CX</span></a>
                   </div>
                   {/* <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
                       <span className="navbar-toggler-icon"></span>
