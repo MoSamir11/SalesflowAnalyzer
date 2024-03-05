@@ -381,7 +381,6 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
     
         socket.on("mute:me",(data)=>{
             users[data.roomID].find(obj => obj.id === socket.id).audio = false;
-            console.log(`384--> ${users[data.roomID].find(obj => obj.id === socket.id).audio}`);
             socket.to(data.roomID).emit("mute:user",{person: data.person, sentiment: data.sentiment})
         });
 
@@ -426,7 +425,7 @@ const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-anal
             socket.to(data).emit("disconnected")
             socket.leave(room)
         });
-    
+        
     });
 
     server.listen(port, () => {

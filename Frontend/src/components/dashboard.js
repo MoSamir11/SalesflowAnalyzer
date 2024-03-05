@@ -13,6 +13,7 @@ import axios from "axios";
 import { isWithGender } from 'face-api.js';
 import Chart from 'chart.js/auto';
 import { getRelativePosition } from 'chart.js/helpers';
+import { TextAnalyticsClient, AzureKeyCredential } from '@azure/ai-text-analytics';
 
 
 
@@ -283,6 +284,18 @@ function Dashboard() {
 				window.location.reload()
 			});
 
+			socketRef.current.on("user:left",(id)=>{
+				console.log(`288--> ${id}`);
+				const peerObj = peersRef.current.find(p=>p.peerID === id);
+				console.log(id, peerObj);
+				if(peerObj){
+					peerObj.peer.destroy();
+					ClientPeers.peer.destroy();
+				}
+				const peers = peersRef.current.filter(p=>p.peerID !== id);
+				peersRef.current = peers;
+				setPeers(peers);
+			})
         })
 
 		
@@ -312,7 +325,10 @@ function Dashboard() {
 
 	const leaveCall = () => {
 		socketRef.current.emit("disconnectUser", roomID);
-		window.location.href = "/"
+		// window.location.href = "/"
+		// socketRef.current.disconnect();
+		navigate("/");
+		window.location.reload();
 	}
 
 	const callOpenAI = async () => {
@@ -552,7 +568,8 @@ function Dashboard() {
 					</div>`
 					document.getElementById("speech-container").scrollTop = document.getElementById("speech-container").scrollHeight;
 					
-					const sentimentObj = await SentimentRecognition(data.message)
+					const sentimentObj = await SentimentRecognition(data.message);
+					console.log(`579--> 557 ${JSON.stringify(sentimentObj)}`);
 					if(sentimentObj){
 						//console.log(sentimentObj.aggregate_sentiment)
 						//console.log(chart)
@@ -573,8 +590,18 @@ function Dashboard() {
 			}
 		}
 	}, [socketRef])
+	function getTime(){
+		let date = new Date();
+		let time = date.toLocaleString([],{
+			hour: 'numeric',
+			minute: '2-digit'
+		}).toLowerCase();
+		return time
+	}
 
 	const SentimentRecognition = async (inputtext) => {
+		let time = getTime();
+		console.log(`579--> 1. ${time}`);
 		const options = {
 			method: 'POST',
 			url: 'https://magiccx-backend.azurewebsites.net/get-sentiment',
@@ -585,14 +612,33 @@ function Dashboard() {
 		};
 		
 		try {
+			
+			let time = getTime();
 			const response = await axios.request(options);
-			console.log(`827--> 3 ${JSON.stringify(response.data)}, ${inputtext}`);
+			console.log(`579--> 592 ${JSON.stringify(response.data)}, ${time}`);
 			return response.data
 		} 
 		catch (error) {
 			console.error(error);
 			return undefined
 		}
+
+		// Call from Front End
+		// const endpoint = "https://ocm-chatbot.cognitiveservices.azure.com/";
+		// const key = "87c2908acfab47bb89745ba8ff6a8103";
+		// const client = new TextAnalyticsClient(endpoint, new AzureKeyCredential(key));
+		// const documents = [
+		// 	inputtext
+		// ]
+		// try{
+		// 	const response = await client.analyzeSentiment(documents);
+		// 	const result = {aggregate_sentiment: response[0].confidenceScores, overall_sentiment: response[0].sentiment};
+		// 	console.log(`579-->2. ${JSON.stringify(result)}, ${getTime()}`);
+		// 	return result;
+		// } catch(e){
+		// 	console.log(`579-->3. ${e}`);
+		// 	return undefined;
+		// }
 	}
 
 	async function RequestAuthorizationToken() {
@@ -758,7 +804,7 @@ function Dashboard() {
 			return
 		}
 		var sentiment = await SentimentRecognition(result.text);
-		console.log(`827--> 1 ${JSON.stringify(sentiment)}, ${result.text}`);
+		console.log(`579--> 780 ${JSON.stringify(sentiment)}, ${result.text}`);
 		//console.log(person)
 
 		if(person == "SalesPerson") {
@@ -1282,7 +1328,7 @@ function Dashboard() {
 														{
 															peers.map((peer, index) => {
 																return (
-																	<video key={index} playsInline muted={muteSalesPerson} ref={salespersonVideo} autoPlay></video>
+																	<video key={peer.peerID} playsInline muted={muteSalesPerson} ref={salespersonVideo} autoPlay></video>
 																);
 															})
 														}
@@ -1378,7 +1424,7 @@ function Dashboard() {
 														{
 															peers.map((peer, index) => {
 																return (
-																	<video key={index} playsInline  ref={salespersonVideo} muted={muteSalesPerson} autoPlay></video>
+																	<video key={peer.peerID} playsInline  ref={salespersonVideo} muted={muteSalesPerson} autoPlay></video>
 																);
 															})
 														}
