@@ -590,55 +590,46 @@ function Dashboard() {
 			}
 		}
 	}, [socketRef])
-	function getTime(){
-		let date = new Date();
-		let time = date.toLocaleString([],{
-			hour: 'numeric',
-			minute: '2-digit'
-		}).toLowerCase();
-		return time
-	}
+	
 
 	const SentimentRecognition = async (inputtext) => {
-		let time = getTime();
-		console.log(`579--> 1. ${time}`);
-		const options = {
-			method: 'POST',
-			url: 'https://magiccx-backend.azurewebsites.net/get-sentiment',
-			headers: {
-			  'content-type': 'application/json',
-			},
-			data: {"data" : inputtext}
-		};
+		// console.log(`579--> 1. ${time}`);
+		// const options = {
+		// 	method: 'POST',
+		// 	url: 'https://magiccx-backend.azurewebsites.net/get-sentiment',
+		// 	headers: {
+		// 	  'content-type': 'application/json',
+		// 	},
+		// 	data: {"data" : inputtext}
+		// };
 		
-		try {
+		// try {
 			
-			let time = getTime();
-			const response = await axios.request(options);
-			console.log(`579--> 592 ${JSON.stringify(response.data)}, ${time}`);
-			return response.data
-		} 
-		catch (error) {
-			console.error(error);
-			return undefined
-		}
+		// 	const response = await axios.request(options);
+		// 	console.log(`579--> 592 ${JSON.stringify(response.data)}, `);
+		// 	return response.data
+		// } 
+		// catch (error) {
+		// 	console.error(error);
+		// 	return undefined
+		// }
 
 		// Call from Front End
-		// const endpoint = "https://ocm-chatbot.cognitiveservices.azure.com/";
-		// const key = "87c2908acfab47bb89745ba8ff6a8103";
-		// const client = new TextAnalyticsClient(endpoint, new AzureKeyCredential(key));
-		// const documents = [
-		// 	inputtext
-		// ]
-		// try{
-		// 	const response = await client.analyzeSentiment(documents);
-		// 	const result = {aggregate_sentiment: response[0].confidenceScores, overall_sentiment: response[0].sentiment};
-		// 	console.log(`579-->2. ${JSON.stringify(result)}, ${getTime()}`);
-		// 	return result;
-		// } catch(e){
-		// 	console.log(`579-->3. ${e}`);
-		// 	return undefined;
-		// }
+		const endpoint = "https://ocm-chatbot.cognitiveservices.azure.com/";
+		const key = "87c2908acfab47bb89745ba8ff6a8103";
+		const client = new TextAnalyticsClient(endpoint, new AzureKeyCredential(key));
+		const documents = [
+			inputtext
+		]
+		try{
+			const response = await client.analyzeSentiment(documents);
+			const result = {aggregate_sentiment: response[0].confidenceScores, overall_sentiment: response[0].sentiment};
+			console.log(`579-->2. ${JSON.stringify(result)}`);
+			return result;
+		} catch(e){
+			console.log(`579-->3. ${e}`);
+			return undefined;
+		}
 	}
 
 	async function RequestAuthorizationToken() {
