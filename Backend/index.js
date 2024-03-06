@@ -492,7 +492,6 @@ const fs = require('fs');
     });
 
     socket.on("sendMSG", (data) => {
-      console.log(`495--> ${data.facialExp}`)
       io.in(data.to).emit("sendMSGToSalesmen", {
         to: data.to,
         message: data.message,

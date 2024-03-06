@@ -147,6 +147,7 @@ function Dashboard() {
             userVideo.current.srcObject = stream;
 			setStream(stream);
             socketRef.current.emit("join room", {roomID, email, person});
+			doContinuousRecognition();
             socketRef.current.on("all users", users => {
                 const peers = [];
 				const client_peers = [];
@@ -177,7 +178,7 @@ function Dashboard() {
 						//delay(3000)
 						loadModels();
 						setMuteClient(!obj.audio)
-						doContinuousRecognition()
+						// doContinuousRecognition()
 					}
 					else if(obj.role == "Dealer"){
 						peer.on("stream", stream => {
@@ -213,7 +214,7 @@ function Dashboard() {
 					})
 					setSalespersonSocketId(payload.callerID)
 					setPeers(users => [...users, peer]);
-					doContinuousRecognition()
+					// doContinuousRecognition()
 				}
 				else if(payload.role == "Client"){
 					peer.on("stream", stream => {
@@ -223,7 +224,7 @@ function Dashboard() {
 					setClientPeers(users => [...users, peer]);
 					//delay(3000)
 					loadModels()
-					doContinuousRecognition()
+					// doContinuousRecognition()
 				}
 				else if(payload.role == "Dealer"){
 					peer.on("stream", stream => {
@@ -233,7 +234,7 @@ function Dashboard() {
 					setDealerPeers(users => [...users, peer]);
 					//delay(3000)
 					//loadModels()
-					//doContinuousRecognition()
+					// doContinuousRecognition()
 				}
 				console.log("237--> ClientsPeers",JSON.stringify(ClientPeers), JSON.stringify(DealerPeers));
             });
