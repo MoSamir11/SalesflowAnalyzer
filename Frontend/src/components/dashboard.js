@@ -94,7 +94,8 @@ function Dashboard() {
 	const authorizationEndpoint = "https://magiccx-backend.azurewebsites.net/api/get-speech-token";
 	let subscriptionKey = "b728cec31ab14a2da7749569701f599d"
 	let openai_subscription_key = "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"
-	let conversation_history = ""
+	let conversation_history = "";
+	let [conversation, setConversation] = useState('');
 	const [muted, setMuted] = useState(false);
 	const [muteSalesPerson, setMuteSalesPerson] = useState(false);
 	const [muteDealer, setMuteDealer] = useState(false);
@@ -108,7 +109,7 @@ function Dashboard() {
 	const [hideClientVideo, setHideClientVideo] = useState(false);
 	const [hideSalesPersonVideo, setHideSalesPersonVideo] = useState(false);
 	const [hideDealerVideo, setHideDealerVideo] = useState(false);
-	
+	const [facialExp, setFacialExp] = useState('');
 	//console.log(peers)
 	//console.log(ClientPeers)
 	
@@ -193,8 +194,10 @@ function Dashboard() {
                 setPeers(peers);
 				setClientPeers(client_peers);
 				setDealerPeers(dealer_peers);
+				console.log(ClientPeers);
             })
-
+			// Set Back Button Event
+			window.addEventListener('popstate', leaveCall);
 			socketRef.current.on("user joined", payload => {
 				console.log("user joined", payload.callerID)
                 const peer = addPeer(payload.signal, payload.callerID, stream, payload.role);
@@ -232,6 +235,7 @@ function Dashboard() {
 					//loadModels()
 					//doContinuousRecognition()
 				}
+				console.log("237--> ClientsPeers",JSON.stringify(ClientPeers), JSON.stringify(DealerPeers));
             });
 
             socketRef.current.on("receiving returned signal", payload => {
@@ -271,30 +275,51 @@ function Dashboard() {
 				// }
 			})
 
-			socketRef.current.on("show:user",(data)=>{
-				console.log(`250--> ${JSON.stringify(data)}`);
-				let track = clientVideo.current.srcObject.getTracks()[1];
-				console.log(track);
-				track.enabled = true;
-			})
+			// socketRef.current.on("show:user",(data)=>{
+			// 	console.log(`250--> ${JSON.stringify(data)}`);
+			// 	let track = clientVideo.current.srcObject.getTracks()[1];
+			// 	console.log(track);
+			// 	track.enabled = true;
+			// })
 
-			socketRef.current.on("disconnected",()=>{
-				console.log("user-disconnected")
-				navigate("/");
-				window.location.reload()
+			// socketRef.current.on("disconnected",()=>{
+			// 	console.log("user-disconnected")
+			// 	navigate("/");
+			// 	window.location.reload()
+			// });
+
+			// socketRef.current.on("user:left",(id)=>{
+			// 	console.log(`288--> ${id}`);
+			// 	const peerObj = peersRef.current.find(p=>p.peerID === id);
+			// 	console.log(id, peerObj);
+			// 	if(peerObj){
+			// 		peerObj.peer.destroy();
+			// 		ClientPeers.peer.destroy();
+			// 	}
+			// 	const peers = peersRef.current.filter(p=>p.peerID !== id);
+			// 	peersRef.current = peers;
+			// 	setPeers(peers);
+			// })
+
+			socketRef.current.on("disconnect:user",(data)=>{
+				const peerIdx = findPeer(data.userId);
+				console.log('305-->', peerIdx, ClientPeers);
+				peerIdx.peer.destroy();
+				// setHideClientVideo(true);
+				clientVideo.current.srcObject.getTracks()[0] = false;
+				setPeers((users)=>{
+					users = users.filter((user)=> user.peerID !== peerIdx.peer.peerID);
+					return [...users];
+				});
+				setClientPeers((users)=>{
+					users = users.filter((user)=> user.peerID !== peerIdx.peer.peerID);
+					return [...users];
+				})
+				peersRef.current = peersRef.current.filter(({peerID})=>peerID !== data.userId)
 			});
 
-			socketRef.current.on("user:left",(id)=>{
-				console.log(`288--> ${id}`);
-				const peerObj = peersRef.current.find(p=>p.peerID === id);
-				console.log(id, peerObj);
-				if(peerObj){
-					peerObj.peer.destroy();
-					ClientPeers.peer.destroy();
-				}
-				const peers = peersRef.current.filter(p=>p.peerID !== id);
-				peersRef.current = peers;
-				setPeers(peers);
+			socketRef.current.on("sp-disconnect",(data)=>{
+				window.location.href = "/"
 			})
         })
 
@@ -324,11 +349,18 @@ function Dashboard() {
 	}
 
 	const leaveCall = () => {
-		socketRef.current.emit("disconnectUser", roomID);
-		// window.location.href = "/"
+		if(person === "SalesPerson"){
+			socketRef.current.emit("salesperson-disconnected",{roomID, id: socketRef.current.id, msg: conversation});
+			window.location.href = "/";
+			return;
+		}
+		// e.preventDefault();
+		console.log("348-->",conversation);
+		socketRef.current.emit("disconnectUser", {roomID, id: socketRef.current.id, msg: conversation});
+		window.location.href = "/"
 		// socketRef.current.disconnect();
-		navigate("/");
-		window.location.reload();
+		// navigate("/");
+		// window.location.reload();
 	}
 
 	const callOpenAI = async () => {
@@ -493,6 +525,10 @@ function Dashboard() {
         return peer;
     }
 
+	function findPeer(id) {
+		return peersRef.current.find((p) => p.peerID === id);
+	  }
+
 	useEffect( () => {
 		if(person == "SalesPerson"){
 			if(!document.getElementById("chartJS")){
@@ -559,7 +595,9 @@ function Dashboard() {
 				//loadModels()
 				socketRef.current.on("sendMSGToSalesmen", async (data) => {
 					console.log(`471--> ${JSON.stringify(data)}`)
-					
+						conversation_history += `${getCurrentDate()} ${data.time.toUpperCase()} : ${data.userType} : ${data.sentiment}: ${data.message}\n`
+					setConversation(conversation_history);
+					console.log('588-->', conversation_history);
 					document.getElementById("speech-container").innerHTML += 
 					`<div class="client-speech speech-bubble">
 					<p style="font-size: 11px; margin-bottom: 0.18rem; font-weight: bold; color: #e542a3">${data.userType}</p>
@@ -840,10 +878,16 @@ function Dashboard() {
 					
 					
 					transcript[(new Date).getTime()] = result.text
-					last_speech_recognised_timestamp = (new Date).getTime()
+					last_speech_recognised_timestamp = (new Date).getTime();
+					let nweDate = new Date();
+					let newTime = nweDate.toLocaleString([],{
+						hour: 'numeric',
+						minute: '2-digit'
+					}).toUpperCase();
 					expressions_transcript[(new Date).getTime()] = {"transcript" : result.text}
-
-					conversation_history += '<br> Salesman says: '+ result.text
+					var sentiment = await SentimentRecognition(result.text);
+					let capitalizedSentiment = sentiment.overall_sentiment.charAt(0).toUpperCase() + sentiment.overall_sentiment.slice(1)
+					conversation_history +=`${getCurrentDate()} ${newTime} : Salesman : ${capitalizedSentiment}`+ ' : '+  result.text +"\n"
 
 					//console.log(expressions_transcript)
 					
@@ -862,8 +906,9 @@ function Dashboard() {
 						hour: 'numeric',
 						minute: '2-digit'
 					}).toLowerCase();
-					let capitalizedSentiment = sentiment.overall_sentiment.charAt(0).toUpperCase() + sentiment.overall_sentiment.slice(1)
-					socketRef.current.emit("sendMSG", { to: roomID, message: result.text, time: time,person: person, sentiment: capitalizedSentiment });
+					let capitalizedSentiment = sentiment.overall_sentiment.charAt(0).toUpperCase() + sentiment.overall_sentiment.slice(1);
+					console.log('588-->',facialExp);
+					socketRef.current.emit("sendMSG", { to: roomID, message: result.text, time: time,person: person, sentiment: capitalizedSentiment, facialExp: facialExp });
 
 					break;
 				case SpeechSDK.ResultReason.TranslatedSpeech:
@@ -907,6 +952,8 @@ function Dashboard() {
 						let ExpressionKeyArray = Object.keys(detections[0].expressions)
 						//console.log(ExpressionKeyArray)
 						ExpressionKeyArray.map((obj) => {
+							console.log("588-->",obj);
+							setFacialExp(obj)
 							if(obj == "happy"){
 								let expressionNumber = Math.floor(Number(detections[0].expressions["happy"])*100);
 								if(expressionNumber == 0){
@@ -1010,7 +1057,7 @@ function Dashboard() {
 								//speechDiv.innerHTML = speechDiv.innerHTML + Object.keys(detections[0].expressions).reduce((a, b) => detections[0].expressions[a] > detections[0].expressions[b] ? a : b) + `[...]\r\n`;
 								//speechDiv.scrollTop = speechDiv.scrollHeight;
 
-								conversation_history += '<br> Customer Emotion: '+ Object.keys(detections[0].expressions).reduce((a, b) => detections[0].expressions[a] > detections[0].expressions[b] ? a : b)
+								// conversation_history += '\nCustomer Emotion: '+ Object.keys(detections[0].expressions).reduce((a, b) => detections[0].expressions[a] > detections[0].expressions[b] ? a : b)
 
 								//console.log(conversation_history)
 							}
@@ -1059,6 +1106,12 @@ function Dashboard() {
 		}
 
 	}
+	function getCurrentDate() {
+		const currentDate = new Date();
+		const day = currentDate.getDate().toString().padStart(2, '0');   const month = (currentDate.getMonth() + 1).toString().padStart(2, '0'); 
+		const year = currentDate.getFullYear();
+		return `${day}-${month}-${year}`;
+	  }
 	console.log(clientVideo.current.srcObject);
 	// const isCameraOff = stream.getTracks()[1].enabled;
   return (
@@ -1126,7 +1179,11 @@ function Dashboard() {
 
 												<div className="salesman-video-container">
 													<div className="salesman-video">
-													{ClientPeers.map((peer, index) => {
+													{
+														hideClientVideo?
+														<p>Hide Client Video</p>:
+														ClientPeers.map((peer, index) => {
+																console.log(ClientPeers);
 																return (
 																	<div key={index} className="client-video-1" >
 																	<video playsInline muted={muteClient} ref={clientVideo} autoPlay></video>
@@ -1145,18 +1202,22 @@ function Dashboard() {
 													</div>
 													<div className="profile-overlay-salesman-2">
 														{
-															/*
+															
+															/* 
 															peers.map((peer, index) => {
 																return (
-																	<video key={index} playsInline  ref={salespersonVideo} autoPlay></video>
+																	<video key={index} playsInline peer={peer}  ref={salespersonVideo} autoPlay></video>
 																);
-															})
+															}) 
 															*/
+															
+
 															DealerPeers.map((peer, index) => {
 																return (
 																	<video key={index} playsInline muted={muteDealer}  ref={dealerVideo} autoPlay></video>
 																);
 															})
+															
 														}
 													</div>
 												</div>
@@ -1489,5 +1550,16 @@ function Dashboard() {
 	
   );
 }
+// const Video = (props) =>{
+//     var ref = useRef();
 
+//     useEffect(()=>{
+//         props.peer.on("stream",(stream)=>{
+//             ref.current.srcObject = stream;
+//         })
+//     },[])
+//     return(
+//         <video playsInline autoPlay muted ref={ref} style={{width: 300}}/>
+//     )
+// }
 export default Dashboard;
