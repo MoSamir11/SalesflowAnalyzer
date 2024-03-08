@@ -417,6 +417,43 @@ const fs = require('fs');
         }
     
     }
+    function writeBlobMediaFile(filePath){
+      console.log(constants.AZURE_STORAGE_CONNECTION_STRING);
+      const AZURE_STORAGE_CONNECTION_STRING = constants.AZURE_STORAGE_CONNECTION_STRING;
+
+        const blobServiceClient = BlobServiceClient.fromConnectionString(
+          AZURE_STORAGE_CONNECTION_STRING
+        );
+        const containerName = constants.CONTAINER_NAME;
+        const containerClient = blobServiceClient.getContainerClient('video-recordings');
+        const blockBlobClient = containerClient.getBlockBlobClient('meeting-details')
+        try{
+        const uploadBlobResponse = blockBlobClient.uploadFile(
+          filePath
+        );
+        if(uploadBlobResponse){
+          console.log("File uploaded");
+        } else {
+          console.log("File not uploaded");
+        }
+        var blobClient = containerClient.getBlobClient('meeting-details');
+        var url = blobClient.generateSasUrl({
+          permissions: BlobSASPermissions.parse('r'),
+          startsOn: new Date(),
+          expiresOn: new Date(new Date().valueOf() + 5 * 60 * 1000),
+          protocol: SASProtocol.HttpsAndHttp
+        });
+        const promiseObject = Promise.resolve(url);
+        promiseObject.then(url => {
+          console.log('448-->',url);
+        }).catch(error => {
+          console.error(error);
+        });
+      } catch (err){
+          console.log(err);
+      }
+  
+  }
 
   const users = {};
 
@@ -497,8 +534,7 @@ const fs = require('fs');
         message: data.message,
         time: data.time,
         userType: data.person,
-        sentiment: data.sentiment,
-        facialExp: data.facialExp
+        sentiment: data.sentiment
       });
     });
 
@@ -542,6 +578,10 @@ const fs = require('fs');
     socket.on("salesperson-disconnected",(data)=>{
         writeBlobFile(data.msg)
         socket.to(data.roomID).emit("sp-disconnect",{roomId: data.roomID, id: data.id})
+    });
+
+    socket.on("upload-meeting",(data)=>{
+      writeBlobMediaFile(data)
     })
   });
 
