@@ -41,7 +41,7 @@ const fs = require('fs');
         "https://facial-emotion-recognition-dev-v2.azurewebsites.net",
         "http://localhost:3000",
         "https://facial-emotion-recognition-dev-v3.azurewebsites.net",
-        "https://magiccx.azurewebsites.net",
+        "https://magiccx.azurewebsites.net/",
       ],
       methods: ["GET", "POST"],
     },
@@ -388,7 +388,8 @@ const fs = require('fs');
           );
           const containerName = constants.CONTAINER_NAME;
           const containerClient = blobServiceClient.getContainerClient(containerName);
-          const blockBlobClient = containerClient.getBlockBlobClient('meeting-details')
+          var date = new Date()
+          const blockBlobClient = containerClient.getBlockBlobClient(`meeting-details${date}`)
           try{
           const uploadBlobResponse = blockBlobClient.upload(
             msg,
@@ -501,10 +502,11 @@ const fs = require('fs');
     });
 
     socket.on("mute:me", (data) => {
+      var id = users[data.roomID].find((obj) => obj.id === socket.id);
+      if(users[data.roomID] && id){
       users[data.roomID].find((obj) => obj.id === socket.id).audio = false;
-      socket
-        .to(data.roomID)
-        .emit("mute:user", { person: data.person, sentiment: data.sentiment });
+      }
+      socket.to(data.roomID).emit("mute:user", { person: data.person, sentiment: data.sentiment });
     });
 
     socket.on("unmute:me", (data) => {
@@ -529,12 +531,14 @@ const fs = require('fs');
     });
 
     socket.on("sendMSG", (data) => {
+      // console.log(`532--> ${JSON.stringify(data)}`);
       io.in(data.to).emit("sendMSGToSalesmen", {
         to: data.to,
         message: data.message,
         time: data.time,
         userType: data.person,
-        sentiment: data.sentiment
+        sentiment: data.sentiment,
+        email: data.email
       });
     });
 

@@ -6,6 +6,7 @@ import * as $ from 'jquery';
 //import { useSocket } from "./context/SocketProvider";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuid } from 'uuid';
+import { Header } from "./common_comp/header";
 
 
 function Home() {
@@ -31,23 +32,7 @@ function Home() {
   return (
     <section className="main-layout">
 
-        <header>
-            <nav className="navbar navbar-expand-lg bg-body-tertiary border-bottom">
-              <div className="container-fluid">
-                  <div className="index-logo p-2">
-                      <a href="#">magic<span>CX</span></a>
-                  </div>
-                  {/* <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
-                      <span className="navbar-toggler-icon"></span>
-                  </button>
-                  <div className="collapse navbar-collapse" id="navbarText">
-                      <span className="navbar-text ml-auto">
-                          Navbar text with an inline element
-                      </span>
-                  </div> */}
-              </div>
-			      </nav>
-        </header>
+        <Header/>
 
         <div className="row">
         	<div className="col-lg-12 col-md-12 col-sm-12 d-flex justify-content-end px-4">
@@ -105,9 +90,15 @@ function Home() {
             	<div className="row pt-res">
             		<div className="col-lg-12 col-md-12 col-sm-12">
             			<div className="">
-                  <h1>magicCX</h1>
+                  <p>
+                  <a style={{fontSize: '1.7rem'}}>
+                    magic<span style={{color: '#D273F2', fontSize: '2.25rem', fontWeight: 600}}>CX</span>
+                  </a>
+                </p>
             				<p className="pt-4">We re-engineered the service we built for secure business meetings.
-                    <br/><b>magicCX</b>, AI Companion is your trusted digital assistant that empowers you. </p>
+                    <br/><a>
+                    magic<span style={{color: '#D273F2', fontSize: '1.25rem', fontWeight: 600}}>CX</span>
+                  </a>, AI Companion is your trusted digital assistant that empowers you. </p>
             			</div>
             		</div>
             	</div>

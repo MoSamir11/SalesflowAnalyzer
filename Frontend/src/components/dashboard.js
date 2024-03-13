@@ -7,9 +7,8 @@ import {
 } from "react-router-dom";
 import Peer from "simple-peer";
 import io from "socket.io-client";
-import Avatar from "@mui/material/Avatar";
 import Navbar from "./navbar.js";
-import Header from "./header.js";
+// import Header from "./header.js";
 import OpenAI from "openai";
 import $ from "jquery";
 import * as faceapi from "face-api.js";
@@ -25,6 +24,17 @@ import { useRecordWebcam } from "react-record-webcam";
 import RecordRTC, { RecordRTCPromiseHandler } from "recordrtc";
 import useScreenRecorder from "use-screen-recorder";
 import { useReactMediaRecorder } from "react-media-recorder";
+import girlImg from "./images/girl.png";
+import video2 from "./images/video-2.mp4";
+import video3 from "./images/video-3.mp4";
+import bulb from "./images/bulb.png";
+import img1 from "./images/image-1.png";
+import { deepOrange, deepPurple } from "@mui/material/colors";
+import Avatar from "react-avatar";
+import LoginModal from "./login/login-modal.js";
+import { Sidebar } from "./common_comp/sidebar.js";
+import { Header } from "./common_comp/header.js";
+import PDFViewer from "./common_comp/pdf-viewer.js";
 //V-1.11
 //loadModels(); & doContinuousRecognition(); These functions need to be called for SalesPerson
 //doContinuousRecognition() need to be called for Client
@@ -35,7 +45,7 @@ const Video = (props) => {
 
   useEffect(() => {
     props.peer.on("stream", (stream) => {
-      console.log("Hi", stream);
+      // //console.log("Hi", stream);
       ref.current.srcObject = stream;
     });
   }, []);
@@ -118,14 +128,17 @@ function Dashboard() {
   const [hideDealerVideo, setHideDealerVideo] = useState(false);
   let facialExp = "";
   const [clientFE, setClientFE] = useState("");
-  const [bolburl, setBlobUrl] = useState('');
-  //console.log(peers)
-  //console.log(ClientPeers)
+  const [bolburl, setBlobUrl] = useState("");
+  let customerResponse = '';
+  ////console.log(peers)
+  ////console.log(ClientPeers)
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [email, setEmail] = useState(searchParams.get("email"));
   const [person, setPerson] = useState(searchParams.get("person"));
-
+  const [userEmail, setUserEmail] = useState(searchParams.get("email"));
+  const [chatBoxData, setChatBoxData] = useState([]);
+  const [pitchInfo, setPitchInfo] = useState([]);
   let userAudioStream = undefined;
 
   let expressions = {};
@@ -144,13 +157,17 @@ function Dashboard() {
   const [recorder, setRecorder] = useState(null);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const remoteVideoRef = useRef(null);
-
+  const [show, setShow] = useState(true);
   const [recordingId, setRecordingId] = useState("");
   const [videoBlob, setVideoBlob] = useState(null);
   const [type, setType] = useState(null);
-
-//   const {startRecording,pauseRecording,blobUrl,resetRecording,resumeRecording,status,stopRecording} = useScreenRecorder({ audio: true });
-const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRecorder({ video: true, audio: true })
+  const [tab,setTab] = useState('tab2');
+  const [vibeScore, setVibeScore] = useState('');
+  const [aiFeature, setSelectedAIFeature] = useState('pitch')
+  //   const {startRecording,pauseRecording,blobUrl,resetRecording,resumeRecording,status,stopRecording} = useScreenRecorder({ audio: true });
+  const { status, startRecording, stopRecording, mediaBlobUrl } =
+    useReactMediaRecorder({ video: true, audio: true });
+    // //console.log(`164--> ${searchParams.get("email")}`);
   if (!!window.SpeechSDK) {
     SpeechSDK = window.SpeechSDK;
     //setSpeechSDK(window.SpeechSDK)
@@ -161,9 +178,28 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
   let authorizationToken = undefined;
 
   useEffect(() => {
-    socketRef.current = io.connect("http://localhost:3001");
-    // socketRef.current = io.connect("https://magiccx-backend.azurewebsites.net");
-
+    // //console.log("Hello World");
+    // socketRef.current = io.connect("http://localhost:3001");
+    socketRef.current = io.connect("https://magiccx-backend.azurewebsites.net");
+    // document.getElementById("speech-container").innerHTML += `
+    // <div class="row px-1">
+    // 	<div class="col-lg-12 col-md-12 col-sm-12">
+    // 		<div class="d-flex align-items-center">
+    // 			<div class="circleBotImg d-flex justify-content-center align-items-center">
+    // 				<img src="images/girl.png">
+    // 			</div>
+    // 			<div class="d-flex gap-2 pb-2 align-items-center">
+    // 				<span class="textBot">Jane Doe</span>
+    // 					<span class="timeBotText">11:13</span>
+    // 			  </div>
+    // 				</div>
+    // 				<div class="chatBox-1 position-relative">
+    // 					<p class="p-text">Hello World</p>
+    // 				<div class="green-dot"></div>
+    // 		</div>
+    // 	</div>
+    // </div>
+    // `;
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
@@ -176,7 +212,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
           const client_peers = [];
           const dealer_peers = [];
           users.forEach((obj) => {
-            console.log(`146--> ${JSON.stringify(obj.audio)}`);
+            // //console.log(`146--> ${JSON.stringify(obj.audio)}`);
             const peer = createPeer(
               obj.id,
               socketRef.current.id,
@@ -190,12 +226,12 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
             if (obj.role == "SalesPerson") {
               peer.on("stream", (stream) => {
                 salespersonVideo.current.srcObject = stream;
-                //console.log(salespersonVideo)
+                ////console.log(salespersonVideo)
               });
               setSalespersonSocketId(obj.id);
               peers.push(peer);
               setMuteSalesPerson(!obj.audio);
-              // doContinuousRecognition()
+              callSentimentScore();
             } else if (obj.role == "Client") {
               peer.on("stream", (stream) => {
                 clientVideo.current.srcObject = stream;
@@ -221,12 +257,12 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
           setPeers(peers);
           setClientPeers(client_peers);
           setDealerPeers(dealer_peers);
-          console.log(ClientPeers);
+          // //console.log(ClientPeers);
         });
         // Set Back Button Event
         window.addEventListener("popstate", leaveCall);
         socketRef.current.on("user joined", (payload) => {
-          console.log("user joined", payload.callerID);
+          // //console.log("user joined", payload.callerID);
           const peer = addPeer(
             payload.signal,
             payload.callerID,
@@ -241,7 +277,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
             peer.on("stream", (stream) => {
               salespersonVideo.current.srcObject = stream;
               setSalesPersonStream(stream);
-              console.log(salespersonVideo);
+              // //console.log(salespersonVideo);
             });
             setSalespersonSocketId(payload.callerID);
             setPeers((users) => [...users, peer]);
@@ -265,11 +301,6 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
             //loadModels()
             // doContinuousRecognition()
           }
-          console.log(
-            "237--> ClientsPeers",
-            JSON.stringify(ClientPeers),
-            JSON.stringify(DealerPeers)
-          );
         });
 
         socketRef.current.on("receiving returned signal", (payload) => {
@@ -278,7 +309,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
         });
 
         socketRef.current.on("mute:user", (data) => {
-          console.log(`223--> ${data.person}`);
+          // //console.log(`223--> ${data.person}`);
           if (data.person == "SalesPerson") {
             setMuteSalesPerson(true);
           } else if (data.person == "Client") {
@@ -299,33 +330,33 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
         });
 
         socketRef.current.on("hide:user", (data) => {
-          console.log(`250--> ${JSON.stringify(data)}`);
+          //console.log(`250--> ${JSON.stringify(data)}`);
           let track = clientVideo.current.srcObject.getTracks()[1];
-          console.log(track);
+          //console.log(track);
           track.enabled = false;
           // if(data.person === "Client"){
           // 	let track = clientVideo.current.srcObject.getTracks()[1];;
-          // 	console.log(track);
+          //console.log(track);
           // }
         });
 
         // socketRef.current.on("show:user",(data)=>{
-        // 	console.log(`250--> ${JSON.stringify(data)}`);
+        //console.log(`250--> ${JSON.stringify(data)}`);
         // 	let track = clientVideo.current.srcObject.getTracks()[1];
-        // 	console.log(track);
+        //console.log(track);
         // 	track.enabled = true;
         // })
 
         // socketRef.current.on("disconnected",()=>{
-        // 	console.log("user-disconnected")
+        //console.log("user-disconnected")
         // 	navigate("/");
         // 	window.location.reload()
         // });
 
         // socketRef.current.on("user:left",(id)=>{
-        // 	console.log(`288--> ${id}`);
+        //console.log(`288--> ${id}`);
         // 	const peerObj = peersRef.current.find(p=>p.peerID === id);
-        // 	console.log(id, peerObj);
+        //console.log(id, peerObj);
         // 	if(peerObj){
         // 		peerObj.peer.destroy();
         // 		ClientPeers.peer.destroy();
@@ -337,7 +368,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
 
         socketRef.current.on("disconnect:user", (data) => {
           const peerIdx = findPeer(data.userId);
-          console.log("305-->", peerIdx, ClientPeers);
+          //console.log("305-->", peerIdx, ClientPeers);
           peerIdx.peer.destroy();
           // setHideClientVideo(true);
           clientVideo.current.srcObject.getTracks()[0] = false;
@@ -369,6 +400,12 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
     });
   }, []);
 
+  function callSentimentScore(){
+    setInterval(()=>{
+      getSentimentScore();
+    },3000);
+  }
+
   function reconnectWithPeer(person) {
     var peer = new Peer({
       initiator: false,
@@ -392,7 +429,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
       return;
     }
     // e.preventDefault();
-    console.log("348-->", conversation);
+    //console.log("348-->", conversation);
     socketRef.current.emit("disconnectUser", {
       roomID,
       id: socketRef.current.id,
@@ -405,28 +442,20 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
   };
 
   const callOpenAI = async () => {
-    //console.log("Hi from callOpenAI")
-    //conversation_history += ""
-    //console.log(conversation_history)
-
     const openai = new OpenAI({
       apiKey: openai_subscription_key,
       dangerouslyAllowBrowser: true,
     });
 
-    document.getElementById("aibutton").disabled = true;
-
-    //let prompt  = conversation_history
-
     let system_prompt =
       "Act as a car salesman.  Given below is a HTML conversation which shows the customer's emotion based on words spoken by the Salesman. Suggest what you should say next to make the Customer pleasantly surprised. Remove \"Salesman Says\" from your response. I don't need customer's side conversation.";
-
+    //console.log("449-->", conversation_history);
     let messages = [
       { role: "system", content: system_prompt },
       { role: "user", content: conversation_history },
     ];
 
-    //console.log(messages)
+    // //console.log('455-->',messages)
 
     try {
       const chatCompletion = await openai.chat.completions.create({
@@ -436,22 +465,126 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
 
       const text = chatCompletion.choices[0].message.content;
       //return text;
-      //console.log(text)
-
-      document.getElementById("aidivspeech").innerHTML += `<div class="pt-4">
-				<span>
-					${text}
-				</span>
-			</div>
-			`;
-      document.getElementById("aidivspeech").scrollTop =
-        document.getElementById("aidivspeech").scrollHeight;
-
-      document.getElementById("aibutton").disabled = false;
+      //console.log("465-->", text);
+      let date = new Date();
+      let time = date
+        .toLocaleString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        })
+        .toUpperCase();
+      setPitchInfo((prevState) => [...prevState, { info: text, time: time, type: 'Pitching'}]);
+      document.getElementById("aiFeatureTab").scrollTop = document.getElementById("aiFeatureTab").scrollHeight;
     } catch (err) {
       console.error(err);
+    }
+  };
 
-      document.getElementById("aibutton").disabled = false;
+  const addSummary = async()=>{
+    const openai = new OpenAI({
+      apiKey: openai_subscription_key,
+      dangerouslyAllowBrowser: true,
+    });
+
+    let system_prompt =
+      "Summarize the below conversationAct as a summarizer for a conversation between three parties. You are provided with a dialogue involving SalesPerson,Dealer, and Customer. SalesPerson speaks about the features of car and concerns customer presents their counter-arguments, and salesperson offers a neutral opinion and attempts to mediate. Summarize this conversation, capturing the key points raised by each party and highlighting any potential areas of agreement or disagreement. Keep the summary concise, yet comprehensive, providing a well-rounded overview of the conversation's main points to facilitate understanding and aid decision-making.";
+    //console.log("495-->", conversation_history);
+    let messages = [
+      { role: "system", content: system_prompt },
+      { role: "user", content: conversation_history },
+    ];
+
+    // //console.log('455-->',messages)
+
+    try {
+      const chatCompletion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: messages,
+      });
+
+      const text = chatCompletion.choices[0].message.content;
+      //console.log(`510--> ${text}`);
+    let date = new Date();
+      let time = date
+        .toLocaleString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        })
+        .toUpperCase();
+      setPitchInfo((prevState) => [...prevState, { info: text, time: time, type:'Summary'}]);
+      
+      document.getElementById("aiFeatureTab").scrollTop = document.getElementById("aiFeatureTab").scrollHeight;
+    }catch(e){
+      //console.log(e);
+    }
+  }
+
+  function getTime(){
+    let date = new Date();
+    let time = date
+      .toLocaleString([], {
+        hour: "numeric",
+        minute: "2-digit",
+      })
+      .toUpperCase();
+    return time
+  }
+
+  function addProductInfo(){
+   
+    setPitchInfo((prevState) => [...prevState, { info: 'Magic CX is an innovative application designed to facilitate meetings between dealers, salesmen, and potential customers interested in purchasing. Magic CX focuses on scheduling and facilitating meetings between dealers, salesmen, and customers. Its primary objective is to enhance the purchasing process by integrating facial recognition, sentiment analysis, and AI-driven assistance to improve sales efficiency and customer satisfaction', time: getTime(), type:'Product Info'}]);
+  }
+
+  const getSentimentScore = async () => {
+    //console.log("527--> Called");
+    if(customerResponse==''){
+      return;
+    }
+    const openai = new OpenAI({
+      apiKey: openai_subscription_key,
+      dangerouslyAllowBrowser: true,
+    });
+
+    let system_prompt =
+      "Act as a sentiment analysis expert to generate a vibe score from 1 to 100 for the sentiment and facial expression recorded at different points in time. Consider that facial expressions are polled every second, while sentiment is recorded at the end of each sentence. The vibe score should reflect a combination of emotions, with 1 indicating sadness, 100 indicating happiness, and values in between representing varying emotions. Please provide your response as only a single number avoid any supporting text";
+    let messages = [
+      { role: "system", content: system_prompt },
+      { role: "user", content: customerResponse },
+    ];
+
+    console.log('543-->',customerResponse)
+
+    try {
+      const chatCompletion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: messages,
+      });
+      console.log("550-->", chatCompletion);
+      const text = chatCompletion.choices[0].message.content;
+      //return text;
+      console.log("553-->", text);
+      var score = text
+      setVibeScore(score);
+      // let date = new Date();
+      // let time = date
+      //   .toLocaleString([], {
+      //     hour: "numeric",
+      //     minute: "2-digit",
+      //   })
+      //   .toUpperCase();
+      // setPitchInfo((prevState) => [...prevState, { info: text, time: time }]);
+      // document.getElementById("aidivspeech").innerHTML += `<div class="pt-4">
+      // 	<span>
+      // 		${text}
+      // 	</span>
+      // </div>
+      // `;
+      // document.getElementById("aidivspeech").scrollTop =
+      //   document.getElementById("aidivspeech").scrollHeight;
+
+      // document.getElementById("aibutton").disabled = false;
+    } catch (err) {
+      console.error(`575--> ${err}`);
     }
   };
 
@@ -492,10 +625,10 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
       },
       stream,
     });
-    console.log("Hi 5");
+    //console.log("Hi 5");
 
     peer.on("signal", (signal) => {
-      console.log("Hi 6");
+      //console.log("Hi 6");
       socketRef.current.emit("sending signal", {
         userToSignal,
         callerID,
@@ -507,20 +640,20 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
     /*
 		if(role == "Client"){
 			peer.on("stream", (stream) => {
-				//console.log("Hi2")
+				////console.log("Hi2")
 				if(clientVideoStream.current){
-					console.log("assigned")
+					//console.log("assigned")
 					clientVideoStream.current.srcObject = stream
 				}
 				else{
-					console.log("not assigned")
+					//console.log("not assigned")
 				}
 				
 			})
 		}
 		*/
 
-    console.log("Hi 7");
+    //console.log("Hi 7");
 
     return peer;
   }
@@ -558,15 +691,15 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
       },
       stream,
     });
-    console.log("Hi 1");
+    //console.log("Hi 1");
 
     peer.on("signal", (signal) => {
-      console.log("Hi 2");
+      //console.log("Hi 2");
       socketRef.current.emit("returning signal", { signal, callerID, role });
     });
 
     peer.signal(incomingSignal);
-    console.log("Hi 3");
+    //console.log("Hi 3");
 
     return peer;
   }
@@ -649,44 +782,51 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
         },
       });
 
-      //console.log(socketRef.current)
+      ////console.log(socketRef.current)
       if (socketRef.current) {
         //loadModels()
         socketRef.current.on("sendMSGToSalesmen", async (data) => {
-          console.log(`471--> ${JSON.stringify(data)}, ${facialExp}`);
+          // //console.log(`471--> ${JSON.stringify(data)}, ${facialExp}`);
           if (data.userType == "Client") {
             conversation_history += `${getCurrentDate()} ${data.time.toUpperCase()} : ${
               data.userType
             } : ${data.sentiment} : ${facialExp} : ${data.message}\n`;
+            customerResponse +=`${data.time}: Speech Expression: ${data.sentiment}\n`
+            //console.log(`783--> ${JSON.stringify(customerResponse)}`);
           } else if (data.userType == "Dealer") {
             conversation_history += `${getCurrentDate()} ${data.time.toUpperCase()} : ${
               data.userType
             } : ${data.sentiment} : ${data.message}\n`;
           }
           setConversation(conversation_history);
-          console.log("588-->", conversation_history);
-          document.getElementById(
-            "speech-container"
-          ).innerHTML += `<div class="client-speech speech-bubble">
-					<p style="font-size: 11px; margin-bottom: 0.18rem; font-weight: bold; color: #e542a3">${
-            data.userType
-          }</p>
-						<p style="font-size: 10px; margin-bottom: 0.1rem">${data.message.replace(
-              /(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/,
-              "$1$2"
-            )}</p>
-						<p style="font-size: 8px; margin-bottom: 0.1rem; text-align: right; padding-left: 15px">${
-              data.time
-            } ${data.sentiment}</p>
-					</div>`;
-          document.getElementById("speech-container").scrollTop =
-            document.getElementById("speech-container").scrollHeight;
+          // //console.log("588-->", conversation_history);
+          setChatBoxData((prevstate) => [
+            ...prevstate,
+            {
+              msg: data.message,
+              time: data.time,
+              sentiment: data.sentiment,
+              img: { girlImg },
+              name: data.userType=="Dealer"?"Intermediary":"Customer",
+              email: data.email,
+              class:
+                data.sentiment == "Negative"
+                  ? "red-dot"
+                  : data.sentiment == "Positive"
+                  ? "green-dot"
+                  : "",
+            },
+          ]);
+          document.getElementById("tabs").scrollTop =
+          document.getElementById("tabs").scrollHeight;
+          
+          document.getElementById("tabbbs").scrollTop = document.getElementById("tabbbs").scrollHeight;
 
           const sentimentObj = await SentimentRecognition(data.message);
-          console.log(`579--> 557 ${JSON.stringify(sentimentObj)}`);
+          // //console.log(`579--> 557 ${JSON.stringify(sentimentObj)}`);
           if (sentimentObj) {
-            //console.log(sentimentObj.aggregate_sentiment)
-            //console.log(chart)
+            ////console.log(sentimentObj.aggregate_sentiment)
+            ////console.log(chart)
             let aggregate_sentiment_obj = sentimentObj.aggregate_sentiment;
             let positive =
               aggregate_sentiment_obj.positive > 0
@@ -703,7 +843,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
             //let mixed = Math.floor(Math.random() * (15 - 10 + 1)) + 15
             //let ambiguous = Math.floor(Math.random() * (20 - 15 + 1)) + 10
 
-            //console.log(positive, negative, neutral, mixed, ambiguous)
+            ////console.log(positive, negative, neutral, mixed, ambiguous)
             if (chart) {
               chart.data.datasets[0].data = [positive, negative, neutral];
               chart.update();
@@ -715,28 +855,6 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
   }, [socketRef]);
 
   const SentimentRecognition = async (inputtext) => {
-    // console.log(`579--> 1. ${time}`);
-    // const options = {
-    // 	method: 'POST',
-    // 	url: 'https://magiccx-backend.azurewebsites.net/get-sentiment',
-    // 	headers: {
-    // 	  'content-type': 'application/json',
-    // 	},
-    // 	data: {"data" : inputtext}
-    // };
-
-    // try {
-
-    // 	const response = await axios.request(options);
-    // 	console.log(`579--> 592 ${JSON.stringify(response.data)}, `);
-    // 	return response.data
-    // }
-    // catch (error) {
-    // 	console.error(error);
-    // 	return undefined
-    // }
-
-    // Call from Front End
     const endpoint = "https://ocm-chatbot.cognitiveservices.azure.com/";
     const key = "87c2908acfab47bb89745ba8ff6a8103";
     const client = new TextAnalyticsClient(
@@ -750,10 +868,10 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
         aggregate_sentiment: response[0].confidenceScores,
         overall_sentiment: response[0].sentiment,
       };
-      console.log(`579-->2. ${JSON.stringify(result)}`);
+      //console.log(`579-->2. ${JSON.stringify(result)}`);
       return result;
     } catch (e) {
-      console.log(`579-->3. ${e}`);
+      // //console.log(`579-->3. ${e}`);
       return undefined;
     }
   };
@@ -767,15 +885,15 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
         region = regionValue;
         authorizationToken = token;
 
-        //console.log('Token fetched from back-end: ' + token);
+        ////console.log('Token fetched from back-end: ' + token);
       } catch (err) {
-        console.log(err);
+        //console.log(err);
       }
     }
   }
 
   function Initialize(onComplete) {
-    //console.log(window.SpeechSDK)
+    ////console.log(window.SpeechSDK)
     if (!!window.SpeechSDK) {
       onComplete(window.SpeechSDK);
     } else {
@@ -787,7 +905,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
     // If an audio file was specified, use it. Otherwise, use the microphone.
     // Depending on browser security settings, the user may be prompted to allow microphone use. Using
     // continuous recognition allows multiple phrases to be recognized from a single use authorization.
-    //console.log(SpeechSDK)
+    ////console.log(SpeechSDK)
     return SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
   }
 
@@ -805,7 +923,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
   }
 
   function getAudioConfigFromStream() {
-    //console.log(userAudioStream)
+    ////console.log(userAudioStream)
     if (userAudioStream) {
       let audioFormat = SpeechSDK.AudioStreamFormat.getWaveFormatPCM(
         16000,
@@ -848,13 +966,13 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
   function doContinuousRecognition() {
     var audioConfig = getAudioConfig();
     var speechConfig = getSpeechConfig(SpeechSDK.SpeechConfig);
-    //console.log(speechConfig)
+    ////console.log(speechConfig)
     if (!speechConfig) return;
 
     // Create the SpeechRecognizer and set up common event handlers and PhraseList data
     reco = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
 
-    //console.log(reco)
+    ////console.log(reco)
     applyCommonConfigurationTo(reco);
 
     // Start the continuous recognition. Note that, in this continuous scenario, activity is purely event-
@@ -909,7 +1027,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
     // Update the hypothesis line in the phrase/result view (only have one)
     //phraseDiv.innerHTML = phraseDiv.innerHTML.replace(/(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/, '$1$2') + `${result.text} [...]\r\n`;
     //phraseDiv.scrollTop = phraseDiv.scrollHeight;
-    //console.log("onRecognizing", result.text)
+    ////console.log("onRecognizing", result.text)
   }
 
   function onRecognized(sender, recognitionEventArgs) {
@@ -918,26 +1036,26 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
   }
 
   async function onRecognizedResult(result) {
-    console.log(`827--> Called`);
-    //console.log(result.reason == SpeechSDK.ResultReason.RecognizedSpeech)
-    console.log(result.text);
-    //console.log(person)
+    // //console.log(`827--> Called`);
+    ////console.log(result.reason == SpeechSDK.ResultReason.RecognizedSpeech)
+    // //console.log(result.text);
+    ////console.log(person)
     if (!result.text) {
       return;
     }
     var sentiment = await SentimentRecognition(result.text);
-    console.log(`579--> 780 ${JSON.stringify(sentiment)}, ${result.text}`);
-    //console.log(person)
-
+    // //console.log(`579--> 780 ${JSON.stringify(sentiment)}, ${result.text}`);
+    ////console.log(person)
+    getSentimentScore()
     if (person == "SalesPerson") {
       //phraseDiv.scrollTop = phraseDiv.scrollHeight;
       //phraseDiv.innerHTML = phraseDiv.innerHTML.replace(/(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/, '$1$2');
-
+      
       switch (result.reason) {
         case SpeechSDK.ResultReason.NoMatch:
         case SpeechSDK.ResultReason.Canceled:
         case SpeechSDK.ResultReason.RecognizedSpeech:
-          //console.log("Salesperson", result.text)
+          ////console.log("Salesperson", result.text)
           let date = new Date();
           let time = date
             .toLocaleString([], {
@@ -945,20 +1063,23 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
               minute: "2-digit",
             })
             .toLowerCase();
-          document.getElementById(
-            "speech-container"
-          ).innerHTML += `<div class="salesman-speech speech-bubble">
-					<p style="font-size: 11px; margin-bottom: 0.18rem; font-weight: bold; color: #ffc107">You</p>
-						<p style="font-size: 10px; margin-bottom: 0.1rem">${result.text.replace(
-              /(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/,
-              "$1$2"
-            )}</p>
-						<p style="font-size: 8px; margin-bottom: 0.1rem; text-align: right; padding-left: 15px;">${time}</p>
-					</div>`;
-          document.getElementById("speech-container").scrollTop =
-            document.getElementById("speech-container").scrollHeight;
+          // document.getElementById(
+          //   "speech-container"
+          // ).innerHTML += `<div class="salesman-speech speech-bubble">
+          // <p style="font-size: 11px; margin-bottom: 0.18rem; font-weight: bold; color: #ffc107">You</p>
+          // 	<p style="font-size: 10px; margin-bottom: 0.1rem">${result.text.replace(
+          //     /(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/,
+          //     "$1$2"
+          //   )}</p>
+          // 	<p style="font-size: 8px; margin-bottom: 0.1rem; text-align: right; padding-left: 15px;">${time}</p>
+          // </div>`;
+          // chatBoxData.push({})
 
-          //console.log("Hi")
+          document.getElementById("tabs").scrollTop =
+            document.getElementById("tabs").scrollHeight;
+            document.getElementById("tabbbs").scrollTop = document.getElementById("tabbbs").scrollHeight;
+
+          ////console.log("Hi")
           //phraseDiv.value += `${result.text}\r\n`;
           /*
 					var intentJson = result.properties
@@ -997,8 +1118,28 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
             " : " +
             result.text +
             "\n";
+          setChatBoxData((prevState) => [
+            ...prevState,
+            {
+              msg: result.text,
+              time: time,
+              sentiment: capitalizedSentiment,
+              img: { girlImg },
+              name: "You",
+              email:'',
+              class:
+                capitalizedSentiment == "Positive"
+                  ? "green-dot"
+                  : capitalizedSentiment == "Negative"
+                  ? "red-dot"
+                  : "",
+            },
+          ]);
+          document.getElementById("tabs").scrollTop =
+            document.getElementById("tabs").scrollHeight;
+            document.getElementById("tabbbs").scrollTop = document.getElementById("tabbbs").scrollHeight;
 
-          //console.log(expressions_transcript)
+          ////console.log(expressions_transcript)
 
           break;
         case SpeechSDK.ResultReason.TranslatedSpeech:
@@ -1014,18 +1155,20 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
             .toLocaleString([], {
               hour: "numeric",
               minute: "2-digit",
+              second: "2-digit"
             })
             .toLowerCase();
           let capitalizedSentiment =
             sentiment.overall_sentiment.charAt(0).toUpperCase() +
             sentiment.overall_sentiment.slice(1);
-          console.log("911-->", facialExp);
+          //console.log("911-->", facialExp);
           socketRef.current.emit("sendMSG", {
             to: roomID,
             message: result.text,
             time: time,
             person: person,
             sentiment: capitalizedSentiment,
+            email: userEmail
           });
 
           break;
@@ -1058,7 +1201,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
 
   const faceDetection = async () => {
     let interval = setInterval(async () => {
-      //console.log(clientVideoStream.current)
+      ////console.log(clientVideoStream.current)
       if (clientVideo.current) {
         const detections = await faceapi
           .detectAllFaces(
@@ -1070,15 +1213,27 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
 
         if (detections) {
           if (detections.length > 0) {
-            //console.log(detections[0].expressions)
+            let date = new Date();
+          let time = date
+            .toLocaleString([], {
+              hour: "numeric",
+              minute: "2-digit",
+              second: "2-digit"
+            })
+            .toLowerCase();
+            ////console.log(detections[0].expressions)
             let ExpressionKeyArray = Object.keys(detections[0].expressions);
-            //console.log(ExpressionKeyArray)
+            console.log(detections[0].expressions)
+            ExpressionKeyArray.map((obj)=>{
+
+            })
             ExpressionKeyArray.map((obj) => {
-            //   console.log("962--> 1.", obj);
+              //   //console.log("962--> 1.", obj);
               facialExp = obj;
 
               setClientFE(obj);
-            //   console.log(`962--> 2. ${facialExp}, ${clientFE}`);
+              //   //console.log(`962--> 2. ${facialExp}, ${clientFE}`);
+              
               if (obj == "happy") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["happy"]) * 100
@@ -1098,6 +1253,8 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
 
                 document.getElementById("happy").innerHTML =
                   labelHtml + barHtml + valueHtml;
+
+                  customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               } else if (obj == "sad") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["sad"]) * 100
@@ -1118,6 +1275,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
 
                 document.getElementById("sad").innerHTML =
                   labelHtml + barHtml + valueHtml;
+                  customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               } else if (obj == "angry") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["angry"]) * 100
@@ -1138,6 +1296,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
 
                 document.getElementById("angry").innerHTML =
                   labelHtml + barHtml + valueHtml;
+                  customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               } else if (obj == "disgusted") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["disgusted"]) * 100
@@ -1158,6 +1317,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
 
                 document.getElementById("disgusted").innerHTML =
                   labelHtml + barHtml + valueHtml;
+                  customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               } else if (obj == "neutral") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["neutral"]) * 100
@@ -1178,6 +1338,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
 
                 document.getElementById("neutral").innerHTML =
                   labelHtml + barHtml + valueHtml;
+                  customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               } else if (obj == "surprised") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["surprised"]) * 100
@@ -1198,6 +1359,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
 
                 document.getElementById("surprised").innerHTML =
                   labelHtml + barHtml + valueHtml;
+                  customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               } else if (obj == "fearful") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["fearful"]) * 10
@@ -1218,19 +1380,20 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
 
                 document.getElementById("fearful").innerHTML =
                   labelHtml + barHtml + valueHtml;
+                  customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               }
             });
 
-            //console.log(Object.keys(detections[0].expressions).reduce((a, b) => detections[0].expressions[a] > detections[0].expressions[b] ? a : b))
+            ////console.log(Object.keys(detections[0].expressions).reduce((a, b) => detections[0].expressions[a] > detections[0].expressions[b] ? a : b))
             //let date = new Date();
             //let showTime = date.getHours() + ':' + date.getMinutes() + ":" + date.getSeconds();
             //expressions[(new Date).getTime()] = Object.keys(detections[0].expressions).reduce((a, b) => detections[0].expressions[a] > detections[0].expressions[b] ? a : b)
-            //console.log(expressions)
+            ////console.log(expressions)
             /*
 						if(Number((new Date).getTime()) - last_speech_recognised_timestamp <= 1000){
 							expressions_transcript[(new Date).getTime()] = {"emotion" : Object.keys(detections[0].expressions).reduce((a, b) => detections[0].expressions[a] > detections[0].expressions[b] ? a : b)}
 
-							console.log(expressions_transcript)
+							//console.log(expressions_transcript)
 							
 							speechDiv.innerHTML = speechDiv.innerHTML + Object.keys(detections[0].expressions).reduce((a, b) => detections[0].expressions[a] > detections[0].expressions[b] ? a : b) + `[...]\r\n`;
 							speechDiv.scrollTop = speechDiv.scrollHeight;
@@ -1257,14 +1420,14 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
                   ),
                 };
 
-                //console.log(expressions_transcript)
+                ////console.log(expressions_transcript)
 
                 //speechDiv.innerHTML = speechDiv.innerHTML + Object.keys(detections[0].expressions).reduce((a, b) => detections[0].expressions[a] > detections[0].expressions[b] ? a : b) + `[...]\r\n`;
                 //speechDiv.scrollTop = speechDiv.scrollHeight;
 
                 // conversation_history += '\nCustomer Emotion: '+ Object.keys(detections[0].expressions).reduce((a, b) => detections[0].expressions[a] > detections[0].expressions[b] ? a : b)
 
-                //console.log(conversation_history)
+                ////console.log(conversation_history)
               }
             }
           }
@@ -1277,7 +1440,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
 
   const muteMySelf = () => {
     setMuted(!muted);
-    console.log(`942--> ${muted}`);
+    //console.log(`942--> ${muted}`);
     // if(muted==true){
     socketRef.current.emit("mute:me", { roomID, person });
     // stopContinuousRecognition();
@@ -1285,23 +1448,25 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
     // 	socketRef.current.emit("mute:me",{roomID, person })
     // }
   };
+
   const unmuteMySelf = () => {
     setMuted(!muted);
     socketRef.current.emit("unmute:me", { roomID, person });
     // doContinuousRecognition();
   };
+  
   const toggleVideo = () => {
-    console.log("Function Called");
+    //console.log("Function Called");
     setWebCamStatus(!webCamStatus);
     let track = stream.getTracks()[1];
-    console.log(track);
-    console.log(webCamStatus);
+    //console.log(track);
+    //console.log(webCamStatus);
     if (webCamStatus) {
       track.enabled = false;
-      console.log(userVideo);
+      //console.log(userVideo);
     } else {
       track.enabled = true;
-      console.log(userVideo);
+      //console.log(userVideo);
       setWebCamStatus(true);
       // navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
       // 	userVideo.current.srcObject = stream;
@@ -1309,6 +1474,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
       // });
     }
   };
+
   function getCurrentDate() {
     const currentDate = new Date();
     const day = currentDate.getDate().toString().padStart(2, "0");
@@ -1316,34 +1482,45 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
     const year = currentDate.getFullYear();
     return `${day}-${month}-${year}`;
   }
-  console.log(clientVideo.current.srcObject);
+  // //console.log(clientVideo.current.srcObject);
   // const isCameraOff = stream.getTracks()[1].enabled;
 
   async function recording() {
     setIsRecording(true);
     startRecording();
-	// setBlobUrl(mediaBlobUrl)
+    // setBlobUrl(mediaBlobUrl)
   }
 
   const stopRecord = async () => {
     setIsRecording(false);
-    stopRecording()
-	setTimeout(()=>{
-		var bUrl = document.getElementById("bloburls").innerHTML;
-		console.log('1332-->', bUrl);
-		socketRef.current.emit("upload-meeting",bUrl)
-	},1000)
-	var name = document.getElementById("Samir").innerHTML;
-	console.log('1332-->',name);
+    stopRecording();
+    setTimeout(() => {
+      var bUrl = document.getElementById("bloburls").innerHTML;
+      //console.log("1332-->", bUrl);
+      socketRef.current.emit("upload-meeting", bUrl);
+    }, 1000);
+    var name = document.getElementById("Samir").innerHTML;
+    //console.log("1332-->", name);
   };
 
-  function getBlobUrl(){
-	console.log('1336-->', status);
-	return mediaBlobUrl;
+  function getBlobUrl() {
+    //console.log("1336-->", status);
+    return mediaBlobUrl;
+  }
+
+  function getClassName(sentiment) {
+    // //console.log(`1392--> ${sentiment}`);
+    if (sentiment == "Positive") {
+      return "green-dot";
+    } else if (sentiment == "Negative") {
+      return "red-dot";
+    } else {
+      return "grey-dot";
+    }
   }
 
   return (
-	
+    
     /*
 	<div>
             <StyledVideo muted ref={userVideo} autoPlay playsInline />
@@ -1390,292 +1567,741 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
     </div>
 	*/
 
-    <div className="wrapper">
-      <div className="main fixed">
-        {person == "SalesPerson" ? (
-          <>
-            <main className="content-salesman px-3 py-2">
-              <div className="container-fluid">
-                <div className="row mt-3 ">
-                  <div className="col-lg-5 col-md-12 col-sm-12">
-                    <div className="row">
-                      <div className="col-lg-12 col-md-12 col-sm-12">
-                        <div className="card">
-                          <div className="salesman-video-container">
-                            <div className="salesman-video">
-                              {hideClientVideo ? (
-                                <p>Hide Client Video</p>
-                              ) : (
-                                ClientPeers.map((peer, index) => {
-                                  console.log(ClientPeers);
+    <>
+      {/* <div className="main fixed"> */}
+      {person == "SalesPerson" ? (
+        <>
+          <div class="wrapper">
+            <Sidebar/>
+
+            <div class="main fixed">
+            {/* <header id="header" class="header">
+                <nav class="navbar navbar-expand px-2 border-bottom">
+                  <button
+                    class="btn navbar-btn"
+                    type="button"
+                    data-bs-theme="dark"
+                  >
+                    <span class="navbar-toggler-icon"></span>
+                  </button>{" "}
+                  &nbsp;
+                  <div className="index-logo p-2">
+              <a href="#">
+                magic<span>CX</span>
+              </a>
+            </div>
+                  <div class="w-100"></div>
+                  <a class="navbar-text mx-3" href="#">
+                    <i class="bi bi-gear fs-5"></i>
+                  </a>
+                  <a class="navbar-text mx-3 pr-1 position-relative" href="#">
+                    <i class="bi bi-bell fs-5 position-relative">
+                      <span
+                        class="badge bg-danger rounded-circle position-absolute top-0 end-0 translate-middle"
+                        style={{
+                          width: "10px",
+                          height: "10px",
+                          transform: "translate(-50%, -50%)",
+                        }}
+                      ></span>
+                    </i>
+                  </a>
+                  <div class="navbar-profile mx-2">
+                    <div class="profile-img">
+                      <span role="button">WK</span>
+                    </div>
+                  </div>
+                </nav>
+              </header> */}
+              <Header/>
+              <main class="content-salesman px-2 py-2">
+                <div class="container-fluid">
+                  <div class="row pt-3">
+                    <div class="col-lg-8 col-md-6 col-sm-6  px-4">
+                      <div>
+                        <i class="bi bi-chevron-left fw-bold"></i> &nbsp;{" "}
+                        <span class="fw-bold">
+                          Meeting Details
+                        </span>
+                      </div>
+                      <div class="row pt-4 px-3">
+                        <div class="col-lg-9 col-md-12 col-sm-12">
+                          <div class="card">
+                            <div class="salesman-video-container">
+                              <div class="salesman-video">
+                                {ClientPeers.map((peer, index) => {
                                   return (
                                     <div key={index} className="client-video-1">
-                                      <video
-                                        playsInline
-                                        muted={muteClient}
-                                        ref={clientVideo}
-                                        autoPlay
-                                      ></video>
+                                      <video playsInline muted={muteClient} ref={clientVideo} autoPlay></video>
                                     </div>
                                   );
-                                })
-                              )}
-                            </div>
-
-                            <div className="profile-overlay-salesman">
-                              {userVideo && (
-                                <video
-                                  playsInline
-                                  muted={muted}
-                                  ref={userVideo}
-                                  autoPlay
-                                  loop
-                                ></video>
-                              )}
-                            </div>
-                            <div className="profile-overlay-salesman-2">
-                              {
-                                /* 
-															peers.map((peer, index) => {
-																return (
-																	<video key={index} playsInline peer={peer}  ref={salespersonVideo} autoPlay></video>
-																);
-															}) 
-															*/
-
-                                DealerPeers.map((peer, index) => {
+                                })}
+                              </div>
+                              <div class="profile-overlay-salesman">
+                                {userVideo && (
+                                  <video playsInline muted ref={userVideo} autoPlay loop
+                                  ></video>
+                                )}
+                              </div>
+                              <div class="profile-overlay-salesman-2">
+                                {DealerPeers.map((peer, index) => {
                                   return (
-                                    <video
-                                      key={index}
-                                      playsInline
-                                      muted={muteDealer}
-                                      ref={dealerVideo}
-                                      autoPlay
-                                    ></video>
+                                    <video key={index} playsInline muted={muteDealer} ref={dealerVideo} autoPlay></video>
                                   );
-                                })
-                              }
+                                })}
+                              </div>
+                            </div>
+                            <div class="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
+                              <div class="controls">
+                                {/* <button class="btn control-circle">
+                                  <i class="bi bi-volume-up"></i>
+                                </button> */}
+                                {muted ? (
+                                  <button className="btn control-circle" onClick={() => unmuteMySelf()}>
+                                    <i className="bi bi-mic-mute"></i>
+                                  </button>
+                                ) : (
+                                  <button className="btn control-circle" onClick={() => muteMySelf()}>
+                                    <i className="bi bi-mic"></i>
+                                  </button>
+                                )}
+                                <button class="btn control-circle-red" onClick={()=>leaveCall()}>
+                                  <i class="bi bi-telephone-fill"></i>
+                                </button>
+                                {webCamStatus ? (
+                                  <button className="btn control-circle" onClick={() => toggleVideo()}>
+                                   <i className="bi bi-camera-video"></i>
+                                  </button>
+                                ) : (
+                                  <button class="btn control-circle" onClick={() => toggleVideo()}>
+                                   <i className="bi bi-camera-video-off"></i>
+                                  </button>
+                                )}
+                                {/* <button class="btn control-circle">
+                                  <i class="bi bi-people"></i>
+                                </button> */}
+                              </div>
                             </div>
                           </div>
+                        </div>
+                        <div class="col-lg-3 col-md-12 col-sm-12 pb-res">
+                          <div class="card vibeMeter">
+                            <div class="card-body">
+                              <div class="row chart-res text-center justify-content-center">
+                                <div class="col-lg-12 col-md-10 col-sm-10">
+                                  <span class="sentiment fs-5 fw-bolder vibeMeter-t">
+                                    The Vibe Meter
+                                  </span>
+                                </div>
+                                <div>
+                                  <span class="vibe-t fs-6 text-nowrap p-0">
+                                    Your Customer's Mood So Far
+                                  </span>
+                                </div>
+                                <div class="vibe-img mt-3">
+                                  <img src={bulb} />
+                                </div>
+                                <div class="mt-4">
+                                  <button type="button" class="btn btn-sm btn-white w-100 fw-bold">
+                                   Vibe Score: {vibeScore}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
-                          <div className="controls-wrapper position-absolute bottom-0 start-80 translate-middle-x">
-                            <div className="controls">
-                              <button className="btn control-circle">
-                                <i className="bi bi-volume-up"></i>
-                              </button>
-                              {muted ? (
-                                <button
-                                  className="btn control-circle"
-                                  onClick={() => unmuteMySelf()}
-                                >
-                                  <i className="bi bi-mic-mute"></i>
-                                </button>
-                              ) : (
-                                <button
-                                  className="btn control-circle"
-                                  onClick={() => muteMySelf()}
-                                >
-                                  <i className="bi bi-mic"></i>
-                                </button>
-                              )}
-                              {/* <button className="btn control-circle" onClick={()=>muteMySelf()}>
-															<i className={muted?"bi bi-mic-mute": "bi bi-mic"}></i>
-														</button> */}
-                              <button
-                                className="btn control-circle-red"
-                                onClick={() => leaveCall()}
-                              >
-                                <i className="bi bi-telephone-fill"></i>
-                              </button>
-                              {webCamStatus ? (
-                                <button
-                                  className="btn control-circle"
-                                  onClick={() => toggleVideo()}
-                                >
-                                  <i className="bi bi-camera-video"></i>
-                                </button>
-                              ) : (
-                                <button
-                                  class="btn control-circle"
-                                  onClick={() => toggleVideo()}
-                                >
-                                  <i className="bi bi-camera-video-off"></i>
-                                </button>
-                              )}
-                              <button className="btn control-circle">
-                                <i className="bi bi-people"></i>
-                              </button>
+                      <div class="row pt-3 px-3">
+                        <div class="col-lg-6 col-md-12 col-sm-12 pb-res">
+                          <div class="card chart">
+                            <div class="card-body p-4 pt-3">
+                              <div class="row chart-res">
+                                <div class="col-lg-12 col-md-10 col-sm-10 pt-1">
+                                  <span class="sentiment fs-3 fw-bold customer-emo"> Expression Analysis
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div class="skill-bars pt-2">
+                                <div className="bar" data-label="Happy" data-value="70" data-color="#712cf9" id="happy"></div>
+                                <div className="bar" data-label="Sad" data-value="30" data-color="#FFA500" id="sad"></div>
+                                <div className="bar" data-label="Neutral" data-value="50" data-color="#712cf9" id="disgusted"></div>
+                                <div className="bar" data-label="Content" data-value="25" data-color="#FFA500" id="neutral"></div>
+                                <div className="bar" data-label="Angry" data-value="10" data-color="#cc1717" id="angry"></div>
+                                <div className="bar" data-label="Surprised" data-value="10" data-color="#712cf9" id="surprised"></div>
+                                <div className="bar" data-label="Fearful" data-value="30" data-color="#FFA500" id="fearful"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="col-lg-6 col-md-12 col-sm-12 col-sm-12">
+                          <div class="card chart">
+                            <div class="card-body p-4 pt-3">
+                              <div class="row chart-res">
+                                <div class="col-lg-12 col-md-10 col-sm-10 pt-1">
+                                  <span class="sentiment fs-5 fw-bold customer-vibe">Sentiment Analysis
+                                  </span>
+                                </div>
+                              </div>
+                              <div class="chart-res d-flex justify-content-center align-items-center pt-2">
+                                <canvas id="sentiment-chart" aria-label="chart" height="294" width="400" data-labels="Positive, Negative, Neutral" data-data="20, 40, 22" data-bg-color="#b597f0" data-point-bg-color="#b597f0" data-border-color="black" data-border-width="1" data-point-radius="2" data-line-width="3" data-responsive="false"></canvas>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="row pt-4">
-                      <div className="col-lg-12 col-md-12 col-sm-12">
-                        <div className="card">
-                          <div className="card-header p-3 text-center">
-                            <button
-                              className="generate-response-button"
-                              id="aibutton"
-                              onClick={() => callOpenAI()}
-                            >
-                              <b>Generate AI Response</b>
+                    <div class="modal fade" id="tab1ModalLabel" tabindex="-1" aria-labelledby="tab1ModalLabel" aria-hidden="true">
+                      <div class="modal-dialog modal-fullscreen modal-dialog-centered modal-dialog-scrollable">
+                        <div class="modal-content">
+                          <div class="modal-header px-4">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body">
+                            <div class="px-4">
+                              <button type="button" class="btn btn-dark btn-sm p-2">
+                                <div class="d-flex justify-content-center align-items-center" onClick={() => callOpenAI()}>
+                                  <div class="circle d-flex justify-content-center align-items-center">
+                                    <i class="bx bx-microphone"></i>
+                                  </div>
+                                  <span class="text">Help Me Pitch!</span>
+                                </div>
+                              </button>
+                            </div>
+                            <div class="row pt-4 px-4">
+                              {pitchInfo.map((data, index) => {
+                                return (
+                                  <div class="col-lg-12 col-md-12 col-sm-12" style={{ paddingBottom: "1.5em" }} key={index}>
+                                    <div class="d-flex">
+                                      <div class="circleBot d-flex justify-content-center align-items-center">
+                                        <i class="bi bi-patch-question"></i>
+                                      </div>
+                                      <div class="d-flex gap-2 pb-2 align-items-center">
+                                      <span>magic<span style={{color: '#D273F2', fontSize: '1rem'}}>CX</span>   <span class="timeBotText">{data.time}  <span>{data.type}</span></span></span>  
+                                      </div>
+                                    </div>
+
+                                    <div class="chatBox">
+                                      <p class="p-text">{data.info}</p>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="modal fade" id="tab2ModalLabel" tabindex="-1" aria-labelledby="tab2ModalLabel" aria-hidden="true">
+                      <div class="modal-dialog modal-fullscreen modal-dialog-centered modal-dialog-scrollable">
+                        <div class="modal-content">
+                          <div class="modal-header px-4">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body px-5" id="tabbbs">
+                            <div class="row px-1">
+                              <div class="col-lg-12 col-md-12 col-sm-12">
+                                {chatBoxData.map((data, index) => {
+                                  return (
+                                    <div class="col-lg-12 col-md-12 col-sm-12" key={index}>
+                                      <div class={ data.name == "You"   ? "d-flex justify-content-end position-relative"   : "d-flex align-items-center"}>
+                                        <div class="circleBotImg d-flex justify-content-center align-items-center">
+                                          {/* <div class="profile-img1">
+                                            <span role="button"> */}
+                                          
+                                          {/* </span>
+								                          </div> */}
+                                        </div>
+                                        <div class="d-flex gap-2 pb-2 align-items-center">
+                                          <span class="textBot">
+                                          <Avatar name={data.name == "You"  ? "S"  : data.name } size={30} round={true}/> {data.name}
+                                          </span>
+                                          <span class="timeBotText">
+                                            {data.time}
+                                          </span><br/><span class="timeBotText">
+                                            {data.email}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <div className={ data.name == "Client"   ? "chatBox-1 position-relative"   : data.name == "You"   ? "chatBox-2 position-relative"   : "chatBox-3 position-relative"}>
+                                        <p class="p-text">{data.msg}</p>
+                                        <div className={getClassName(data.sentiment)}></div>
+                                      </div>
+                                      <br></br>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6 col-sm-6">
+                      <div class="row h-100">
+                        <div class="col-lg-12 col-md-12 col-sm-12 pb-res">
+                          <div class="card genAi h-100">
+                            <div class="card-body p-0">
+                              <div class="tabs">
+                                <input type="radio" class="tabs__radio" name="tabs-example" id="tab1" onChange={()=>setTab("tab1")} checked={tab==="tab1"}/>
+                                <label for="tab1" class="tabs__label">
+                                  <i class="bx bxs-brain fs-4"></i>
+                                </label>
+                                <div class="tabs__content tab_1_content p-2" id="aiFeatureTab">
+                                  <div class="d-flex pt-2 tab-1-buttons">
+                                    <button type="button" onClick={()=>setSelectedAIFeature("pitch")} className={aiFeature=="pitch"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
+                                      <div class="d-flex justify-content-center align-items-center" onClick={() => callOpenAI()}>
+                                        <div class="circle d-flex justify-content-center align-items-center">
+                                          <i class="bx bx-microphone"></i>
+                                        </div>
+                                        <span class="text">Help Me Pitch!</span>
+                                      </div>
+                                    </button>
+                                    <button type="button" onClick={()=>setSelectedAIFeature("summarize")} className={aiFeature=="summarize"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
+                                      <div class="d-flex justify-content-center align-items-center" onClick={()=>addSummary()}>
+                                        <div class="circle2 d-flex justify-content-center align-items-center">
+                                          <i class="bx bxs-file"></i>
+                                        </div>
+                                        <span class="text">Summarize</span>
+                                      </div>
+                                    </button>
+                                    <button type="button" onClick={()=>setSelectedAIFeature("productInfo")} className={aiFeature=="productInfo"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
+                                      <div class="d-flex justify-content-center align-items-center" onClick={()=>addProductInfo()}>
+                                        <div class="circle3 d-flex justify-content-center align-items-center">
+                                          <i class="bx bxs-detail"></i>
+                                        </div>
+                                        <span class="text">Product Info</span>
+                                      </div>
+                                    </button>
+                                  </div>
+
+                                  <div class="row px-2 pt-1 showAll">
+                                    <div class="col-lg-12 col-md-12 col-sm-12">
+                                      <div class="text-end">
+                                        <p class="mb-1">
+                                          <span class="text-showAll" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample"> Show all
+                                          </span>
+                                          <i class="bi bi-caret-down-fill icon-s"></i>
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    <div class="collapse p-1 pb-2" id="collapseExample">
+                                      <div class="">
+                                        <div class="d-flex gap-3 pt-2 tab-1-buttons">
+                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
+                                            <div class="d-flex justify-content-center align-items-center" onClick={() => callOpenAI()}>
+                                              <div class="circle2 d-flex justify-content-center align-items-center">
+                                                <i class="bx bx-microphone"></i>
+                                              </div>
+                                              <span class="text">
+                                                Help me Pitch!
+                                              </span>
+                                            </div>
+                                          </button>
+                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
+                                            <div class="d-flex justify-content-center align-items-center">
+                                              <div class="circle2 d-flex justify-content-center align-items-center">
+                                                <i class="bx bxs-file"></i>
+                                              </div>
+                                              <span class="text">
+                                                Summarize
+                                              </span>
+                                            </div>
+                                          </button>
+                                          <button type="button" onClick={()=>setSelectedAIFeature("productInfo")} className={aiFeature=="productInfo"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
+                                            <div class="d-flex justify-content-center align-items-center">
+                                              <div class="circle3 d-flex justify-content-center align-items-center">
+                                                <i class="bx bxs-detail"></i>
+                                              </div>
+                                              <span class="text">
+                                                Product Info
+                                              </span>
+                                            </div>
+                                          </button>
+                                        </div>
+                                        <div class="d-flex gap-3 pt-2 tab-1-buttons">
+                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
+                                            <div class="d-flex justify-content-center align-items-center" onClick={() => callOpenAI()}>
+                                              <div class="circle2 d-flex justify-content-center align-items-center">
+                                                <i class="bx bx-microphone"></i>
+                                              </div>
+                                              <span class="text">
+                                                Help me Pitch!
+                                              </span>
+                                            </div>
+                                          </button>
+                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
+                                            <div class="d-flex justify-content-center align-items-center">
+                                              <div class="circle2 d-flex justify-content-center align-items-center">
+                                                <i class="bx bxs-file"></i>
+                                              </div>
+                                              <span class="text">
+                                                Summarize
+                                              </span>
+                                            </div>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            class="btn btn-light-grey btn-sm p-2"
+                                          >
+                                            <div class="d-flex justify-content-center align-items-center">
+                                              <div class="circle3 d-flex justify-content-center align-items-center">
+                                                <i class="bx bxs-detail"></i>
+                                              </div>
+                                              <span class="text">
+                                                Product Info
+                                              </span>
+                                            </div>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div class="row pt-2 tabExpandBorder">
+                                    <div class="col-lg-12 col-md-12 col-sm-12">
+                                      <div class="d-flex justify-content-end ">
+                                        <i class="bi bi-arrows-angle-expand btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#tab1ModalLabel"></i>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div class="row pt-1 px-3">
+                                    {pitchInfo.map((data, index) => {
+                                      return (
+                                        <div class="col-lg-12 col-md-12 col-sm-12" style={{ paddingBottom: "1.5em" }} key={index}>
+                                          <div class="d-flex">
+                                            <div class="circleBot d-flex justify-content-center align-items-center">
+                                              <i class="bi bi-patch-question"></i>
+                                              
+                                            </div>
+                                            <div class="d-flex gap-2 pb-2 align-items-center">
+                                              <span>
+                                                magic<span style={{color: '#D273F2', fontSize: '1rem'}}>CX</span>   <span class="timeBotText">
+                                                {data.time}  <span>{data.type}</span>
+                                              </span>
+                                              </span>
+                                              
+                                            </div>
+                                          </div>
+
+                                          <div class="chatBox">
+                                            <p class="p-text">{data.info}</p>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+
+                                <input type="radio" class="tabs__radio" name="tabs-example" id="tab2" onChange={()=>setTab("tab2")} checked={tab==="tab2"}/>
+                                <label for="tab2" class="tabs__label">
+                                  <i class="bx bxs-message fs-4"></i>
+                                </label>
+                                <div class="tabs__content tab_2_content" id="tabs">
+                                  <div class="row">
+                                    <div class="col-lg-12 col-md-12 col-sm-12">
+                                      <div class="d-flex justify-content-end ">
+                                        <i class="bi bi-arrows-angle-expand btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#tab2ModalLabel"></i>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div class="row px-1">
+                                    {chatBoxData.map((data, index) => {
+                                      return (
+                                        <div class="col-lg-12 col-md-12 col-sm-12" key={index}>
+                                          <div class={data.name == "You"  ? "d-flex justify-content-end position-relative"  : "d-flex align-items-center"}>
+                                            <div class="circleBotImg d-flex justify-content-center align-items-center">
+                                              {/* <Avatar
+                                                size={30}
+                                                round={true}
+                                                name={
+                                                  data.name == "You"
+                                                    ? "S"
+                                                    : data.name
+                                                }
+                                              /> */}
+                                            </div>
+                                            <div class="d-flex gap-2 pb-2 align-items-center">
+                                              <span class="textBot">
+                                              <Avatar size={30} round={true} name={data.name == "You"? "S"  : data.name }/> {data.name}
+                                              </span>
+                                              <span class="timeBotText">
+                                                {data.time}
+                                              </span><br/>
+                                              <span class="timeBotText">
+                                            {data.email}
+                                          </span>
+                                            </div>
+                                          </div>
+                                          <div className={data.name == "Client"  ? "chatBox-1 position-relative": data.name == "You"? "chatBox-2 position-relative" : "chatBox-3 position-relative" }>
+                                            <p class="p-text">{data.msg}</p>
+                                            <div className={getClassName(data.sentiment )}></div>
+                                          </div>
+                                          <br></br>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+
+                                <input type="radio" class="tabs__radio" name="tabs-example" id="tab3" onChange={()=>setTab("tab3")} checked={tab==="tab3"}/>
+                                <label for="tab3" class="tabs__label">
+                                  <i class="bx bxs-file fs-4"></i>
+                                </label>
+                                <div class="tabs__content tab_1_content p-2" id="aiFeatureTab">
+                                    <PDFViewer />
+                                </div>
+
+                                <input type="radio" class="tabs__radio" name="tabs-example" id="tab4"/>
+                                <label for="tab4" class="tabs__label">
+                                  <i class="bx bxs-video fs-4"></i>
+                                </label>
+                                {/* <div class="tabs__content tab_1_content p-2" id="aiFeatureTab">
+                                  <div class="d-flex pt-2 tab-1-buttons">
+                                    <button type="button" onClick={()=>setSelectedAIFeature("pitch")} className={aiFeature=="pitch"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
+                                      <div class="d-flex justify-content-center align-items-center" onClick={() => callOpenAI()}>
+                                        <div class="circle d-flex justify-content-center align-items-center">
+                                          <i class="bx bx-microphone"></i>
+                                        </div>
+                                        <span class="text">Help Me Pitch!</span>
+                                      </div>
+                                    </button>
+                                    <button type="button" onClick={()=>setSelectedAIFeature("summarize")} className={aiFeature=="summarize"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
+                                      <div class="d-flex justify-content-center align-items-center" onClick={()=>addSummary()}>
+                                        <div class="circle2 d-flex justify-content-center align-items-center">
+                                          <i class="bx bxs-file"></i>
+                                        </div>
+                                        <span class="text">Summarize</span>
+                                      </div>
+                                    </button>
+                                    <button type="button" onClick={()=>setSelectedAIFeature("pInfo")} className={aiFeature=="pInfo"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
+                                      <div class="d-flex justify-content-center align-items-center">
+                                        <div class="circle2 d-flex justify-content-center align-items-center">
+                                        <i class="bx bxs-detail"></i>
+                                        </div>
+                                        <span class="text">Product Info</span>
+                                      </div>
+                                    </button>
+                                    <button type="button" onClick={()=>setSelectedAIFeature("productInfo")} className={aiFeature=="productInfo"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
+                                      <div class="d-flex justify-content-center align-items-center">
+                                        <div class="circle3 d-flex justify-content-center align-items-center">
+                                          <i class="bx bxs-detail"></i>
+                                        </div>
+                                        <span class="text">Product Info</span>
+                                      </div>
+                                    </button>
+                                  </div>
+
+                                  <div class="row px-2 pt-1 showAll">
+                                    <div class="col-lg-12 col-md-12 col-sm-12">
+                                      <div class="text-end">
+                                        <p class="mb-1">
+                                          <span class="text-showAll" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample"> Show all
+                                          </span>
+                                          <i class="bi bi-caret-down-fill icon-s"></i>
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    <div class="collapse p-1 pb-2" id="collapseExample">
+                                      <div class="">
+                                        <div class="d-flex gap-3 pt-2 tab-1-buttons">
+                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
+                                            <div class="d-flex justify-content-center align-items-center" onClick={() => callOpenAI()}>
+                                              <div class="circle2 d-flex justify-content-center align-items-center">
+                                                <i class="bx bx-microphone"></i>
+                                              </div>
+                                              <span class="text">
+                                                Help me Pitch!
+                                              </span>
+                                            </div>
+                                          </button>
+                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
+                                            <div class="d-flex justify-content-center align-items-center">
+                                              <div class="circle2 d-flex justify-content-center align-items-center">
+                                                <i class="bx bxs-file"></i>
+                                              </div>
+                                              <span class="text">
+                                                Summarize
+                                              </span>
+                                            </div>
+                                          </button>
+                                          <button type="button" onClick={()=>setSelectedAIFeature("productInfo")} className={aiFeature=="productInfo"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
+                                            <div class="d-flex justify-content-center align-items-center">
+                                              <div class="circle3 d-flex justify-content-center align-items-center">
+                                                <i class="bx bxs-detail"></i>
+                                              </div>
+                                              <span class="text">
+                                                Product Info
+                                              </span>
+                                            </div>
+                                          </button>
+                                        </div>
+                                        <div class="d-flex gap-3 pt-2 tab-1-buttons">
+                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
+                                            <div class="d-flex justify-content-center align-items-center" onClick={() => callOpenAI()}>
+                                              <div class="circle2 d-flex justify-content-center align-items-center">
+                                                <i class="bx bx-microphone"></i>
+                                              </div>
+                                              <span class="text">
+                                                Help me Pitch!
+                                              </span>
+                                            </div>
+                                          </button>
+                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
+                                            <div class="d-flex justify-content-center align-items-center">
+                                              <div class="circle2 d-flex justify-content-center align-items-center">
+                                                <i class="bx bxs-file"></i>
+                                              </div>
+                                              <span class="text">
+                                                Summarize
+                                              </span>
+                                            </div>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            class="btn btn-light-grey btn-sm p-2"
+                                          >
+                                            <div onClick={()=>setSelectedAIFeature("productInfo")} className={aiFeature=="productInfo"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"} >
+                                              <div class="circle3 d-flex justify-content-center align-items-center">
+                                                <i class="bx bxs-detail"></i>
+                                              </div>
+                                              <span class="text">
+                                                Product Info
+                                              </span>
+                                            </div>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div class="row pt-2 tabExpandBorder">
+                                    <div class="col-lg-12 col-md-12 col-sm-12">
+                                      <div class="d-flex justify-content-end ">
+                                        <i class="bi bi-arrows-angle-expand btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#tab1ModalLabel"></i>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div class="row pt-1 px-3">
+                                    {pitchInfo.map((data, index) => {
+                                      return (
+                                        <div class="col-lg-12 col-md-12 col-sm-12" style={{ paddingBottom: "1.5em" }} key={index}>
+                                          <div class="d-flex">
+                                            <div class="circleBot d-flex justify-content-center align-items-center">
+                                              <i class="bi bi-patch-question"></i>
+                                              
+                                            </div>
+                                            <div class="d-flex gap-2 pb-2 align-items-center">
+                                              <span>
+                                                magic<span style={{color: '#D273F2', fontSize: '1rem'}}>CX</span>   <span class="timeBotText">
+                                                {data.time}  <span>{data.type}</span>
+                                              </span>
+                                              </span>
+                                              
+                                            </div>
+                                          </div>
+
+                                          <div class="chatBox">
+                                            <p class="p-text">{data.info}</p>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div> */}
+
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </main>
+            </div>
+          </div>
+        </>
+      ) : person == "Client" ? (
+        <>
+          <main className="content-client  px-3 py-2">
+            <div className="container-fluid">
+              <div className="row mt-3 ">
+                <div className="col-lg-12 col-md-12 col-sm-12">
+                  <div className="row pt-3">
+                    <div className="col-lg-12 col-md-12 col-sm-12">
+                      <div className="card">
+                        <div className="client-video-container">
+                          {
+                            //(peers.length == 1) &&
+                            //<ClientVideo1 peer={peers[0]} />
+                          }
+                          {
+                            //(peers.length == 2) &&
+                            //<>
+                            //<ClientVideo1 peer={peers[0]} />
+                            //</><ClientVideo2 peer={peers[1]} />
+                            //</>
+                          }
+                          {peers.map((peer, index) => {
+                            return (
+                              <video key={peer.peerID} playsInline muted={muteSalesPerson} ref={salespersonVideo} autoPlay></video>
+                            );
+                          })}
+                          {DealerPeers.map((peer, index) => {
+                            return (
+                              <video key={index} playsInline muted={muteDealer} ref={dealerVideo} autoPlay></video>
+                            );
+                          })}
+
+                          <div className="profile-overlay-client">
+                            {userVideo && (
+                              <video playsInline muted ref={userVideo} autoPlay loop></video>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
+                          <div className="controls-client">
+                            {/* <button className="btn control-circle-client">
+                              <i className="bi bi-volume-up"></i>
+                            </button> */}
+                            {muted ? (
+                              <button className="btn control-circle-client" onClick={() => unmuteMySelf()}>
+                               <i className="bi bi-mic-mute"></i>
+                              </button>
+                            ) : (
+                              <button className="btn control-circle-client" onClick={() => muteMySelf()}>
+                               <i className="bi bi-mic"></i>
+                              </button>
+                            )}
+                            {/* <button className="btn control-circle-client" onClick={()=>muteMySelf()}>
+																<i className={muted?"bi bi-mic-mute": "bi bi-mic"}></i>
+															</button> */}
+                            <button className="btn control-circle-red-client" onClick={() => leaveCall()}>
+                             <i className="bi bi-telephone-fill"></i>
                             </button>
-                          </div>
-                          <div
-                            className="card-body"
-                            id="aidivspeech"
-                            style={{ maxHeight: "350px", overflowY: "scroll" }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      {/* {(status === "idle" || status === "permission-requested" || status === "error") && (
-                        <button onClick={() => recording()}>
-                          Start recording
-                        </button>
-                      )}
-                      {(status === "recording" || status === "paused") && (
-                        <button onClick={() => stopRecord()}>
-                          Stop recording
-                        </button>
-                      )} */}
-					  {/* <p id="bloburls">{mediaBlobUrl}</p>
-					  <p id="Samir">Hello World</p> */}
-                    </div>
-                  </div>
-
-                  <div className="col-lg-7 col-md-12 col-sm-12">
-                    <div className="row">
-                      <div className="col-lg-6 col-md-12 col-sm-12 pb-res">
-                        <div className="card">
-                          <div className="card-body p-4">
-                            <div className="row chart-res">
-                              <div className="col-lg-10 col-md-10 col-sm-10 pt-1">
-                                <span className="sentiment fs-5 fw-bold">
-                                  <b>Expression Score</b>
-                                </span>
-                              </div>
-                              <div className="col-lg-2 col-md-2 col-sm-2 d-flex justify-content-center align-items-center">
-                                <i className="sentiment-i bi bi-info-circle fs-5 violet"></i>
-                              </div>
-                              <div>
-                                <span className="sentiment-t fs-6 pt-2">
-                                  See their facial expression in one sheet
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="skill-bars pt-3">
-                              <div
-                                className="bar"
-                                data-label="Happy"
-                                data-value="90"
-                                data-color="#712cf9"
-                                id="happy"
-                              ></div>
-                              <div
-                                className="bar"
-                                data-label="Sad"
-                                data-value="30"
-                                data-color="#FFA500"
-                                id="sad"
-                              ></div>
-                              <div
-                                className="bar"
-                                data-label="Disgusted"
-                                data-value="25"
-                                data-color="#cc1717"
-                                id="disgusted"
-                              ></div>
-                              <div
-                                className="bar"
-                                data-label="Neutral"
-                                data-value="50"
-                                data-color="#712cf9"
-                                id="neutral"
-                              ></div>
-                              <div
-                                className="bar"
-                                data-label="Angry"
-                                data-value="25"
-                                data-color="#cc1717"
-                                id="angry"
-                              ></div>
-                              <div
-                                className="bar"
-                                data-label="Surprised"
-                                data-value="10"
-                                data-color="#712cf9"
-                                id="surprised"
-                              ></div>
-                              <div
-                                className="bar"
-                                data-label="Fearful"
-                                data-value="30"
-                                data-color="#FFA500"
-                                id="fearful"
-                              ></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="col-lg-6 col-md-12 col-sm-12 col-sm-12">
-                        <div className="card">
-                          <div className="card-body p-4">
-                            <div className="row chart-res">
-                              <div className="col-lg-10 col-md-10 col-sm-10 pt-1">
-                                <span className="sentiment fs-5 fw-bold">
-                                  <b>Sentiment Score</b>
-                                </span>
-                              </div>
-                              <div className="col-lg-2 col-md-2 col-sm-2 d-flex justify-content-center align-items-center">
-                                <i className="sentiment-i bi bi-info-circle fs-5 violet"></i>
-                              </div>
-                              <div>
-                                <span className="sentiment-t fs-6 pt-2">
-                                  See their Tone in one sheet
-                                </span>
-                              </div>
-                            </div>
-                            <div className="chart-res d-flex justify-content-center align-items-center pt-4">
-                              <canvas
-                                id="sentiment-chart"
-                                aria-label="chart"
-                                height="294"
-                                width="400"
-                                data-labels="Positive, Negative, Neutral"
-                                data-data="20, 40, 22"
-                                data-bg-color="#b597f0"
-                                data-point-bg-color="#b597f0"
-                                data-border-color="black"
-                                data-border-width="1"
-                                data-point-radius="2"
-                                data-line-width="3"
-                                data-responsive="false"
-                              ></canvas>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="row pt-4 pb-res">
-                          <div className="col-lg-12 col-md-12 col-sm-12">
-                            <div className="card">
-                              <div className="card-header p-1 text-center">
-                                <span>
-                                  <b>Speech to Text</b>
-                                </span>
-                              </div>
-                              <div className="chat-container">
-                                <div
-                                  className="speech-container"
-                                  id="speech-container"
-                                ></div>
-                              </div>
-                            </div>
+                            {webCamStatus ? (
+                              <button class="btn control-circle-client" onClick={() => toggleVideo()}>
+                               <i className="bi bi-camera-video"></i>
+                              </button>
+                            ) : (
+                              <button class="btn control-circle-client" onClick={() => toggleVideo()}>
+                               <i className="bi bi-camera-video-off"></i>
+                              </button>
+                            )}
+                            {/* <button className="btn control-circle-client">
+                              <i className="bi bi-people"></i>
+                            </button> */}
                           </div>
                         </div>
                       </div>
@@ -1683,113 +2309,80 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
                   </div>
                 </div>
               </div>
-            </main>
-          </>
-        ) : person == "Client" ? (
-          <>
-            <main className="content-client  px-3 py-2">
-              <div className="container-fluid">
-                <div className="row mt-3 ">
-                  <div className="col-lg-12 col-md-12 col-sm-12">
-                    <div className="row pt-3">
-                      <div className="col-lg-12 col-md-12 col-sm-12">
-                        <div className="card">
-                          <div className="client-video-container">
-                            {
-                              //(peers.length == 1) &&
-                              //<ClientVideo1 peer={peers[0]} />
-                            }
-                            {
-                              //(peers.length == 2) &&
-                              //<>
-                              //<ClientVideo1 peer={peers[0]} />
-                              //</><ClientVideo2 peer={peers[1]} />
-                              //</>
-                            }
-                            {peers.map((peer, index) => {
-                              return (
-                                <video
-                                  key={peer.peerID}
-                                  playsInline
-                                  muted={muteSalesPerson}
-                                  ref={salespersonVideo}
-                                  autoPlay
-                                ></video>
-                              );
-                            })}
-                            {DealerPeers.map((peer, index) => {
-                              return (
-                                <video
-                                  key={index}
-                                  playsInline
-                                  muted={muteDealer}
-                                  ref={dealerVideo}
-                                  autoPlay
-                                ></video>
-                              );
-                            })}
+            </div>
+          </main>
+        </>
+      ) : (
+        <>
+          <main className="content-client  px-3 py-2">
+            <div className="container-fluid">
+              <div className="row mt-3 ">
+                <div className="col-lg-12 col-md-12 col-sm-12">
+                  <div className="row pt-3">
+                    <div className="col-lg-12 col-md-12 col-sm-12">
+                      <div className="card">
+                        <div className="client-video-container">
+                          {
+                            //(peers.length == 1) &&
+                            //<ClientVideo1 peer={peers[0]} />
+                          }
+                          {
+                            //(peers.length == 2) &&
+                            //<>
+                            //<ClientVideo1 peer={peers[0]} />
+                            //</><ClientVideo2 peer={peers[1]} />
+                            //</>
+                          }
+                          {peers.map((peer, index) => {
+                            return (
+                              <video key={peer.peerID} playsInline ref={salespersonVideo} muted={muteSalesPerson} autoPlay></video>
+                            );
+                          })}
+                          {ClientPeers.map((peer, index) => {
+                            return (
+                              <video key={index} playsInline muted={muteClient} ref={clientVideo} autoPlay></video>
+                            );
+                          })}
 
-                            <div className="profile-overlay-client">
-                              {userVideo && (
-                                <video
-                                  playsInline
-                                  muted={muted}
-                                  ref={userVideo}
-                                  autoPlay
-                                  loop
-                                ></video>
-                              )}
-                            </div>
+                          <div className="profile-overlay-client">
+                            {userVideo && (
+                              <video playsInline muted ref={userVideo} autoPlay loop></video>
+                            )}
                           </div>
+                        </div>
 
-                          <div className="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
-                            <div className="controls-client">
-                              <button className="btn control-circle-client">
-                                <i className="bi bi-volume-up"></i>
+                        <div className="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
+                          <div className="controls-client">
+                            {/* <button className="btn control-circle-client">
+                              <i className="bi bi-volume-up"></i>
+                            </button> */}
+                            {muted ? (
+                              <button className="btn control-circle-client" onClick={() => unmuteMySelf()}>
+                                <i className="bi bi-mic-mute"></i>
                               </button>
-                              {muted ? (
-                                <button
-                                  className="btn control-circle-client"
-                                  onClick={() => unmuteMySelf()}
-                                >
-                                  <i className="bi bi-mic-mute"></i>
-                                </button>
-                              ) : (
-                                <button
-                                  className="btn control-circle-client"
-                                  onClick={() => muteMySelf()}
-                                >
-                                  <i className="bi bi-mic"></i>
-                                </button>
-                              )}
-                              {/* <button className="btn control-circle-client" onClick={()=>muteMySelf()}>
+                            ) : (
+                              <button className="btn control-circle-client" onClick={() => muteMySelf()}>
+                                <i className="bi bi-mic"></i>
+                              </button>
+                            )}
+                            {/* <button className="btn control-circle-client" onClick={()=>muteMySelf()}>
 																<i className={muted?"bi bi-mic-mute": "bi bi-mic"}></i>
 															</button> */}
-                              <button
-                                className="btn control-circle-red-client"
-                                onClick={() => leaveCall()}
-                              >
-                                <i className="bi bi-telephone-fill"></i>
+                            <button className="btn control-circle-red-client" onClick={() => leaveCall()}>
+                              <i className="bi bi-telephone-fill"></i>
+                            </button>
+                            {webCamStatus ? (
+                              <button class="btn control-circle-client" onClick={() => toggleVideo()}>
+                               <i className="bi bi-camera-video"></i>
                               </button>
-                              {webCamStatus ? (
-                                <button
-                                  class="btn control-circle-client"
-                                  onClick={() => toggleVideo()}
-                                >
-                                  <i className="bi bi-camera-video"></i>
-                                </button>
-                              ) : (
-                                <button
-                                  class="btn control-circle-client"
-                                  onClick={() => toggleVideo()}
-                                >
-                                  <i className="bi bi-camera-video-off"></i>
-                                </button>
-                              )}
-                              <button className="btn control-circle-client">
-                                <i className="bi bi-people"></i>
+                            ) : (
+                              <button class="btn control-circle-client" onClick={() => toggleVideo()}>
+                               <i className="bi bi-camera-video-off"></i>
                               </button>
-                            </div>
+                            )}
+                            {/* <button className="btn control-circle-client">
+                              <i className="bi bi-people"></i>
+                            </button> */}
                           </div>
                         </div>
                       </div>
@@ -1797,125 +2390,12 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
                   </div>
                 </div>
               </div>
-            </main>
-          </>
-        ) : (
-          <>
-            <main className="content-client  px-3 py-2">
-              <div className="container-fluid">
-                <div className="row mt-3 ">
-                  <div className="col-lg-12 col-md-12 col-sm-12">
-                    <div className="row pt-3">
-                      <div className="col-lg-12 col-md-12 col-sm-12">
-                        <div className="card">
-                          <div className="client-video-container">
-                            {
-                              //(peers.length == 1) &&
-                              //<ClientVideo1 peer={peers[0]} />
-                            }
-                            {
-                              //(peers.length == 2) &&
-                              //<>
-                              //<ClientVideo1 peer={peers[0]} />
-                              //</><ClientVideo2 peer={peers[1]} />
-                              //</>
-                            }
-                            {peers.map((peer, index) => {
-                              return (
-                                <video
-                                  key={peer.peerID}
-                                  playsInline
-                                  ref={salespersonVideo}
-                                  muted={muteSalesPerson}
-                                  autoPlay
-                                ></video>
-                              );
-                            })}
-                            {ClientPeers.map((peer, index) => {
-                              return (
-                                <video
-                                  key={index}
-                                  playsInline
-                                  muted={muteClient}
-                                  ref={clientVideo}
-                                  autoPlay
-                                ></video>
-                              );
-                            })}
-
-                            <div className="profile-overlay-client">
-                              {userVideo && (
-                                <video
-                                  playsInline
-                                  muted={muted}
-                                  ref={userVideo}
-                                  autoPlay
-                                  loop
-                                ></video>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
-                            <div className="controls-client">
-                              <button className="btn control-circle-client">
-                                <i className="bi bi-volume-up"></i>
-                              </button>
-                              {muted ? (
-                                <button
-                                  className="btn control-circle-client"
-                                  onClick={() => unmuteMySelf()}
-                                >
-                                  <i className="bi bi-mic-mute"></i>
-                                </button>
-                              ) : (
-                                <button
-                                  className="btn control-circle-client"
-                                  onClick={() => muteMySelf()}
-                                >
-                                  <i className="bi bi-mic"></i>
-                                </button>
-                              )}
-                              {/* <button className="btn control-circle-client" onClick={()=>muteMySelf()}>
-																<i className={muted?"bi bi-mic-mute": "bi bi-mic"}></i>
-															</button> */}
-                              <button
-                                className="btn control-circle-red-client"
-                                onClick={() => leaveCall()}
-                              >
-                                <i className="bi bi-telephone-fill"></i>
-                              </button>
-                              {webCamStatus ? (
-                                <button
-                                  class="btn control-circle-client"
-                                  onClick={() => toggleVideo()}
-                                >
-                                  <i className="bi bi-camera-video"></i>
-                                </button>
-                              ) : (
-                                <button
-                                  class="btn control-circle-client"
-                                  onClick={() => toggleVideo()}
-                                >
-                                  <i className="bi bi-camera-video-off"></i>
-                                </button>
-                              )}
-                              <button className="btn control-circle-client">
-                                <i className="bi bi-people"></i>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </main>
-          </>
-        )}
-      </div>
-    </div>
+            </div>
+          </main>
+        </>
+      )}
+      {/* </div> */}
+    </>
   );
 }
 // const Video = (props) =>{
