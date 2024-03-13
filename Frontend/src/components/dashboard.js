@@ -34,7 +34,7 @@ import Avatar from "react-avatar";
 import LoginModal from "./login/login-modal.js";
 import { Sidebar } from "./common_comp/sidebar.js";
 import { Header } from "./common_comp/header.js";
-import PDFViewer from "./common_comp/pdf-viewer.js";
+// import PDFViewer from "./common_comp/pdf-viewer.js";
 //V-1.11
 //loadModels(); & doContinuousRecognition(); These functions need to be called for SalesPerson
 //doContinuousRecognition() need to be called for Client
@@ -179,8 +179,8 @@ function Dashboard() {
 
   useEffect(() => {
     // //console.log("Hello World");
-    // socketRef.current = io.connect("http://localhost:3001");
-    socketRef.current = io.connect("https://magiccx-backend.azurewebsites.net");
+    socketRef.current = io.connect("http://localhost:3001");
+    // socketRef.current = io.connect("https://magiccx-backend.azurewebsites.net");
     // document.getElementById("speech-container").innerHTML += `
     // <div class="row px-1">
     // 	<div class="col-lg-12 col-md-12 col-sm-12">
@@ -2056,7 +2056,7 @@ function Dashboard() {
                                   <i class="bx bxs-file fs-4"></i>
                                 </label>
                                 <div class="tabs__content tab_1_content p-2" id="aiFeatureTab">
-                                    <PDFViewer />
+                                    {/* <PDFViewer /> */}
                                 </div>
 
                                 <input type="radio" class="tabs__radio" name="tabs-example" id="tab4"/>
