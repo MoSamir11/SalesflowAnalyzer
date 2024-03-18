@@ -379,7 +379,9 @@ const fs = require('fs');
       
 //   }
 
-    function writeBlobFile(msg){
+    function writeBlobFile(msg,data){
+      console.log(`383--> ${JSON.stringify(data)}`);
+      let blobLink = '';
         console.log(constants.AZURE_STORAGE_CONNECTION_STRING);
         const AZURE_STORAGE_CONNECTION_STRING = constants.AZURE_STORAGE_CONNECTION_STRING;
 
@@ -408,15 +410,38 @@ const fs = require('fs');
             protocol: SASProtocol.HttpsAndHttp
           });
           const promiseObject = Promise.resolve(url);
-          promiseObject.then(url => {
-            console.log('411-->',url);
+          promiseObject.then(async url => {
+            // console.log('411-->',url);
+            let body ={
+              "meetingId": data.roomID,
+              "summarize":"Test summary 2",
+              "recordLink" :"https://www.demo.com/recording/",
+              "fullConversationLink" : url,
+              "sentimentAnalysis" : data.sentiment
+            }
+            blobLink = url;
+            console.log('423-->',body);
+            
+            const res = await axios.post("https://magiccxhs.azurewebsites.net/update-ticket",{
+              "meetingURL": "https://magiccx.azurewebsites.net/"+data.roomID,
+              "summarize":"Summary Of The meeting",
+              "recordLink" :"https://www.demo.com/recording/",
+              "fullConversationLink" : "",
+              "sentimentAnalysis" : ""
+          })
+            console.log('426-->',res.data);
+            if(res.status==200){
+              console.log("Updated Successfully");
+            } else{
+              console.log("Something went wrong");
+            }
           }).catch(error => {
             console.error(error);
           });
         } catch (err){
             console.log(err);
         }
-    
+        
     }
     function writeBlobMediaFile(filePath){
       console.log(constants.AZURE_STORAGE_CONNECTION_STRING);
@@ -502,8 +527,8 @@ const fs = require('fs');
     });
 
     socket.on("mute:me", (data) => {
-      var id = users[data.roomID].find((obj) => obj.id === socket.id);
-      if(users[data.roomID] && id){
+      // var id = users[data.roomID].find((obj) => obj.id === socket.id);
+      if(users[data.roomID]){
       users[data.roomID].find((obj) => obj.id === socket.id).audio = false;
       }
       socket.to(data.roomID).emit("mute:user", { person: data.person, sentiment: data.sentiment });
@@ -570,7 +595,7 @@ const fs = require('fs');
       }
       //io.sockets.socket(socket.id).disconnect();
       //io.sockets.connected[socket.id].disconnect();
-      socket.to(data).emit("disconnected");
+      socket.to(data.roomID).emit("disconnected",socket.id);
       socket.leave(room);
 
       // Today's code
@@ -580,13 +605,22 @@ const fs = require('fs');
     });
 
     socket.on("salesperson-disconnected",(data)=>{
-        writeBlobFile(data.msg)
+        console.log(`584--> ${JSON.stringify(data)}`);
+        writeBlobFile(data.msg,data);
+        // console.log("586-->",url);
+        
         socket.to(data.roomID).emit("sp-disconnect",{roomId: data.roomID, id: data.id})
     });
 
     socket.on("upload-meeting",(data)=>{
       writeBlobMediaFile(data)
-    })
+    });
+
+    // socket.on("disconnect",(id)=>{
+    //   console.log(`620--> ${socket.id}`);
+    //   let roomId = users[socket.id];
+    //   console.log('622-->',roomId);
+    // })
   });
 
   server.listen(port, () => {

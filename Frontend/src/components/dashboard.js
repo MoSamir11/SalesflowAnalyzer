@@ -32,9 +32,12 @@ import img1 from "./images/image-1.png";
 import { deepOrange, deepPurple } from "@mui/material/colors";
 import Avatar from "react-avatar";
 import LoginModal from "./login/login-modal.js";
-import { Sidebar } from "./common_comp/sidebar.js";
+import { Sidebar } from "./sedebar.js";
 import { Header } from "./common_comp/header.js";
+import ReactPlayer from "react-player";
+import MagicCX from './document/MagicCX.mp4'
 // import PDFViewer from "./common_comp/pdf-viewer.js";
+
 //V-1.11
 //loadModels(); & doContinuousRecognition(); These functions need to be called for SalesPerson
 //doContinuousRecognition() need to be called for Client
@@ -110,7 +113,7 @@ function Dashboard() {
     "https://magiccx-backend.azurewebsites.net/api/get-speech-token";
   let subscriptionKey = "b728cec31ab14a2da7749569701f599d";
   let openai_subscription_key =
-    "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";
+    "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";
   let conversation_history = "";
   let [conversation, setConversation] = useState("");
   const [muted, setMuted] = useState(false);
@@ -129,7 +132,7 @@ function Dashboard() {
   let facialExp = "";
   const [clientFE, setClientFE] = useState("");
   const [bolburl, setBlobUrl] = useState("");
-  let customerResponse = '';
+  let customerResponse = "";
   ////console.log(peers)
   ////console.log(ClientPeers)
 
@@ -140,7 +143,7 @@ function Dashboard() {
   const [chatBoxData, setChatBoxData] = useState([]);
   const [pitchInfo, setPitchInfo] = useState([]);
   let userAudioStream = undefined;
-
+  let [passedTime, setTimePassed] = useState('00:00:00')
   let expressions = {};
   let transcript = {};
 
@@ -161,13 +164,22 @@ function Dashboard() {
   const [recordingId, setRecordingId] = useState("");
   const [videoBlob, setVideoBlob] = useState(null);
   const [type, setType] = useState(null);
-  const [tab,setTab] = useState('tab2');
-  const [vibeScore, setVibeScore] = useState('');
-  const [aiFeature, setSelectedAIFeature] = useState('pitch')
+  const [tab, setTab] = useState("tab2");
+  const [vibeScore, setVibeScore] = useState("");
+  const [aiFeature, setSelectedAIFeature] = useState("pitch");
+  // let url ="https://magiccx.azurewebsites.net/";
+  let url = "http://localhost:3000/";
+  const pdfFiles = [
+    { name: "Introduction", path: `${url}document/Introduction.pdf` },
+    { name: "Features", path: `${url}document/Features.pdf` },
+    { name: "Summary", path: `${url}document/Summarization and Product Info.pdf` },
+    { name: "AI Assistant", path: `${url}document/AI Assisted Pitch.pdf` },
+    { name: "Vibe Meter", path: `${url}document/The Vibe Meter.pdf` },
+  ];
   //   const {startRecording,pauseRecording,blobUrl,resetRecording,resumeRecording,status,stopRecording} = useScreenRecorder({ audio: true });
   const { status, startRecording, stopRecording, mediaBlobUrl } =
     useReactMediaRecorder({ video: true, audio: true });
-    // //console.log(`164--> ${searchParams.get("email")}`);
+  // //console.log(`164--> ${searchParams.get("email")}`);
   if (!!window.SpeechSDK) {
     SpeechSDK = window.SpeechSDK;
     //setSpeechSDK(window.SpeechSDK)
@@ -347,11 +359,11 @@ function Dashboard() {
         // 	track.enabled = true;
         // })
 
-        // socketRef.current.on("disconnected",()=>{
-        //console.log("user-disconnected")
-        // 	navigate("/");
-        // 	window.location.reload()
-        // });
+        socketRef.current.on("disconnected",async(data)=>{
+        console.log("user-disconnected")
+        	console.log('354-->',data,peersRef);
+          // await peersRef.current.filter((data)=>data.peerID !== data);
+        });
 
         // socketRef.current.on("user:left",(id)=>{
         //console.log(`288--> ${id}`);
@@ -398,12 +410,22 @@ function Dashboard() {
         await RequestAuthorizationToken();
       }
     });
+
+    var time=0;
+        setInterval(() => {
+          time+=1
+          let hours = String(Math.floor(time/3600)).padStart(2,'0');
+          let minutes = String(Math.floor(time/60)).padStart(2,'0');
+          let sec = String(time%60).padStart(2,'0');
+          $("#timer").text(`${hours}: ${minutes}: ${sec}`);
+          setTimePassed(`${hours}: ${minutes}: ${sec}`)
+        }, 1000);
   }, []);
 
-  function callSentimentScore(){
-    setInterval(()=>{
+  function callSentimentScore() {
+    setInterval(() => {
       getSentimentScore();
-    },3000);
+    }, 3000);
   }
 
   function reconnectWithPeer(person) {
@@ -419,26 +441,24 @@ function Dashboard() {
   }
 
   const leaveCall = () => {
+    console.log('433-->',customerResponse);
     if (person === "SalesPerson") {
       socketRef.current.emit("salesperson-disconnected", {
-        roomID,
+        roomID: roomID,
         id: socketRef.current.id,
-        msg: conversation,
+        msg: customerResponse,
+        sentiment: customerResponse
       });
       window.location.href = "/";
       return;
     }
-    // e.preventDefault();
-    //console.log("348-->", conversation);
+    
     socketRef.current.emit("disconnectUser", {
       roomID,
       id: socketRef.current.id,
       msg: conversation,
     });
     window.location.href = "/";
-    // socketRef.current.disconnect();
-    // navigate("/");
-    // window.location.reload();
   };
 
   const callOpenAI = async () => {
@@ -473,14 +493,18 @@ function Dashboard() {
           minute: "2-digit",
         })
         .toUpperCase();
-      setPitchInfo((prevState) => [...prevState, { info: text, time: time, type: 'Pitching'}]);
-      document.getElementById("aiFeatureTab").scrollTop = document.getElementById("aiFeatureTab").scrollHeight;
+      setPitchInfo((prevState) => [
+        { info: text, time: time, type: "Pitching" },
+        ...prevState
+      ]);
+      // document.getElementById("aiFeatureTab").scrollTop =
+      //   document.getElementById("aiFeatureTab").scrollHeight;
     } catch (err) {
       console.error(err);
     }
   };
 
-  const addSummary = async()=>{
+  const addSummary = async () => {
     const openai = new OpenAI({
       apiKey: openai_subscription_key,
       dangerouslyAllowBrowser: true,
@@ -504,22 +528,26 @@ function Dashboard() {
 
       const text = chatCompletion.choices[0].message.content;
       //console.log(`510--> ${text}`);
-    let date = new Date();
+      let date = new Date();
       let time = date
         .toLocaleString([], {
           hour: "numeric",
           minute: "2-digit",
         })
         .toUpperCase();
-      setPitchInfo((prevState) => [...prevState, { info: text, time: time, type:'Summary'}]);
-      
-      document.getElementById("aiFeatureTab").scrollTop = document.getElementById("aiFeatureTab").scrollHeight;
-    }catch(e){
+      setPitchInfo((prevState) => [
+        { info: text, time: time, type: "Summary" },
+        ...prevState
+      ]);
+
+      // document.getElementById("aiFeatureTab").scrollTop =
+      //   document.getElementById("aiFeatureTab").scrollHeight;
+    } catch (e) {
       //console.log(e);
     }
-  }
+  };
 
-  function getTime(){
+  function getTime() {
     let date = new Date();
     let time = date
       .toLocaleString([], {
@@ -527,17 +555,23 @@ function Dashboard() {
         minute: "2-digit",
       })
       .toUpperCase();
-    return time
+    return time;
   }
 
-  function addProductInfo(){
-   
-    setPitchInfo((prevState) => [...prevState, { info: 'Magic CX is an innovative application designed to facilitate meetings between dealers, salesmen, and potential customers interested in purchasing. Magic CX focuses on scheduling and facilitating meetings between dealers, salesmen, and customers. Its primary objective is to enhance the purchasing process by integrating facial recognition, sentiment analysis, and AI-driven assistance to improve sales efficiency and customer satisfaction', time: getTime(), type:'Product Info'}]);
+  function addProductInfo() {
+    setPitchInfo((prevState) => [
+      {
+        info: "Magic CX is an innovative application designed to facilitate meetings between dealers, salesmen, and potential customers interested in purchasing. Magic CX focuses on scheduling and facilitating meetings between dealers, salesmen, and customers. Its primary objective is to enhance the purchasing process by integrating facial recognition, sentiment analysis, and AI-driven assistance to improve sales efficiency and customer satisfaction",
+        time: getTime(),
+        type: "Product Info",
+      },
+      ...prevState,
+    ]);
   }
 
   const getSentimentScore = async () => {
     //console.log("527--> Called");
-    if(customerResponse==''){
+    if (customerResponse == "") {
       return;
     }
     const openai = new OpenAI({
@@ -552,7 +586,7 @@ function Dashboard() {
       { role: "user", content: customerResponse },
     ];
 
-    console.log('543-->',customerResponse)
+    console.log("543-->", customerResponse);
 
     try {
       const chatCompletion = await openai.chat.completions.create({
@@ -563,7 +597,7 @@ function Dashboard() {
       const text = chatCompletion.choices[0].message.content;
       //return text;
       console.log("553-->", text);
-      var score = text
+      var score = text;
       setVibeScore(score);
       // let date = new Date();
       // let time = date
@@ -791,8 +825,8 @@ function Dashboard() {
             conversation_history += `${getCurrentDate()} ${data.time.toUpperCase()} : ${
               data.userType
             } : ${data.sentiment} : ${facialExp} : ${data.message}\n`;
-            customerResponse +=`${data.time}: Speech Expression: ${data.sentiment}\n`
-            //console.log(`783--> ${JSON.stringify(customerResponse)}`);
+            customerResponse += `${data.time}: Speech Expression: ${data.sentiment}\n`;
+            console.log(`783--> ${customerResponse}`);
           } else if (data.userType == "Dealer") {
             conversation_history += `${getCurrentDate()} ${data.time.toUpperCase()} : ${
               data.userType
@@ -801,13 +835,12 @@ function Dashboard() {
           setConversation(conversation_history);
           // //console.log("588-->", conversation_history);
           setChatBoxData((prevstate) => [
-            ...prevstate,
             {
               msg: data.message,
               time: data.time,
               sentiment: data.sentiment,
               img: { girlImg },
-              name: data.userType=="Dealer"?"Intermediary":"Customer",
+              name: data.userType == "Dealer" ? "Intermediary" : "Customer",
               email: data.email,
               class:
                 data.sentiment == "Negative"
@@ -816,11 +849,13 @@ function Dashboard() {
                   ? "green-dot"
                   : "",
             },
+            ...prevstate,
           ]);
-          document.getElementById("tabs").scrollTop =
-          document.getElementById("tabs").scrollHeight;
-          
-          document.getElementById("tabbbs").scrollTop = document.getElementById("tabbbs").scrollHeight;
+          // document.getElementById("tabs").scrollTop =
+          //   document.getElementById("tabs").scrollHeight;
+
+          // document.getElementById("tabbbs").scrollTop =
+          //   document.getElementById("tabbbs").scrollHeight;
 
           const sentimentObj = await SentimentRecognition(data.message);
           // //console.log(`579--> 557 ${JSON.stringify(sentimentObj)}`);
@@ -1046,11 +1081,11 @@ function Dashboard() {
     var sentiment = await SentimentRecognition(result.text);
     // //console.log(`579--> 780 ${JSON.stringify(sentiment)}, ${result.text}`);
     ////console.log(person)
-    getSentimentScore()
+    getSentimentScore();
     if (person == "SalesPerson") {
       //phraseDiv.scrollTop = phraseDiv.scrollHeight;
       //phraseDiv.innerHTML = phraseDiv.innerHTML.replace(/(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/, '$1$2');
-      
+
       switch (result.reason) {
         case SpeechSDK.ResultReason.NoMatch:
         case SpeechSDK.ResultReason.Canceled:
@@ -1075,9 +1110,10 @@ function Dashboard() {
           // </div>`;
           // chatBoxData.push({})
 
-          document.getElementById("tabs").scrollTop =
-            document.getElementById("tabs").scrollHeight;
-            document.getElementById("tabbbs").scrollTop = document.getElementById("tabbbs").scrollHeight;
+          // document.getElementById("tabs").scrollTop =
+          //   document.getElementById("tabs").scrollHeight;
+          // document.getElementById("tabbbs").scrollTop =
+          //   document.getElementById("tabbbs").scrollHeight;
 
           ////console.log("Hi")
           //phraseDiv.value += `${result.text}\r\n`;
@@ -1119,14 +1155,13 @@ function Dashboard() {
             result.text +
             "\n";
           setChatBoxData((prevState) => [
-            ...prevState,
             {
               msg: result.text,
               time: time,
               sentiment: capitalizedSentiment,
               img: { girlImg },
               name: "You",
-              email:'',
+              email: "",
               class:
                 capitalizedSentiment == "Positive"
                   ? "green-dot"
@@ -1134,10 +1169,12 @@ function Dashboard() {
                   ? "red-dot"
                   : "",
             },
+            ...prevState,
           ]);
-          document.getElementById("tabs").scrollTop =
-            document.getElementById("tabs").scrollHeight;
-            document.getElementById("tabbbs").scrollTop = document.getElementById("tabbbs").scrollHeight;
+          // document.getElementById("tabs").scrollTop =
+          //   document.getElementById("tabs").scrollHeight;
+          // document.getElementById("tabbbs").scrollTop =
+          //   document.getElementById("tabbbs").scrollHeight;
 
           ////console.log(expressions_transcript)
 
@@ -1155,7 +1192,7 @@ function Dashboard() {
             .toLocaleString([], {
               hour: "numeric",
               minute: "2-digit",
-              second: "2-digit"
+              second: "2-digit",
             })
             .toLowerCase();
           let capitalizedSentiment =
@@ -1168,7 +1205,7 @@ function Dashboard() {
             time: time,
             person: person,
             sentiment: capitalizedSentiment,
-            email: userEmail
+            email: userEmail,
           });
 
           break;
@@ -1214,26 +1251,38 @@ function Dashboard() {
         if (detections) {
           if (detections.length > 0) {
             let date = new Date();
-          let time = date
-            .toLocaleString([], {
-              hour: "numeric",
-              minute: "2-digit",
-              second: "2-digit"
-            })
-            .toLowerCase();
+            let time = date
+              .toLocaleString([], {
+                hour: "numeric",
+                minute: "2-digit",
+                second: "2-digit",
+              })
+              .toLowerCase();
             ////console.log(detections[0].expressions)
             let ExpressionKeyArray = Object.keys(detections[0].expressions);
-            console.log(detections[0].expressions)
-            ExpressionKeyArray.map((obj)=>{
-
-            })
+            // console.log(detections[0].expressions)
+            ExpressionKeyArray.map((obj) => {});
+            console.log(
+              "1230-->",
+              Object.keys(detections[0].expressions).reduce((a, b) =>
+                detections[0].expressions[a] > detections[0].expressions[b]
+                  ? a
+                  : b
+              )
+            );
+            var fExp = Object.keys(detections[0].expressions).reduce((a, b) =>
+              detections[0].expressions[a] > detections[0].expressions[b]
+                ? a
+                : b
+            );
+            customerResponse += `${time} Facial Expression: ${fExp}\n`;
             ExpressionKeyArray.map((obj) => {
               //   //console.log("962--> 1.", obj);
               facialExp = obj;
 
               setClientFE(obj);
               //   //console.log(`962--> 2. ${facialExp}, ${clientFE}`);
-              
+
               if (obj == "happy") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["happy"]) * 100
@@ -1254,7 +1303,7 @@ function Dashboard() {
                 document.getElementById("happy").innerHTML =
                   labelHtml + barHtml + valueHtml;
 
-                  customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
+                // customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               } else if (obj == "sad") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["sad"]) * 100
@@ -1275,7 +1324,7 @@ function Dashboard() {
 
                 document.getElementById("sad").innerHTML =
                   labelHtml + barHtml + valueHtml;
-                  customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
+                // customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               } else if (obj == "angry") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["angry"]) * 100
@@ -1296,7 +1345,7 @@ function Dashboard() {
 
                 document.getElementById("angry").innerHTML =
                   labelHtml + barHtml + valueHtml;
-                  customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
+                // customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               } else if (obj == "disgusted") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["disgusted"]) * 100
@@ -1317,7 +1366,7 @@ function Dashboard() {
 
                 document.getElementById("disgusted").innerHTML =
                   labelHtml + barHtml + valueHtml;
-                  customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
+                // customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               } else if (obj == "neutral") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["neutral"]) * 100
@@ -1338,7 +1387,7 @@ function Dashboard() {
 
                 document.getElementById("neutral").innerHTML =
                   labelHtml + barHtml + valueHtml;
-                  customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
+                // customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               } else if (obj == "surprised") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["surprised"]) * 100
@@ -1359,7 +1408,7 @@ function Dashboard() {
 
                 document.getElementById("surprised").innerHTML =
                   labelHtml + barHtml + valueHtml;
-                  customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
+                // customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               } else if (obj == "fearful") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["fearful"]) * 10
@@ -1380,7 +1429,7 @@ function Dashboard() {
 
                 document.getElementById("fearful").innerHTML =
                   labelHtml + barHtml + valueHtml;
-                  customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
+                // customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               }
             });
 
@@ -1454,7 +1503,7 @@ function Dashboard() {
     socketRef.current.emit("unmute:me", { roomID, person });
     // doContinuousRecognition();
   };
-  
+
   const toggleVideo = () => {
     //console.log("Function Called");
     setWebCamStatus(!webCamStatus);
@@ -1520,7 +1569,6 @@ function Dashboard() {
   }
 
   return (
-    
     /*
 	<div>
             <StyledVideo muted ref={userVideo} autoPlay playsInline />
@@ -1572,10 +1620,10 @@ function Dashboard() {
       {person == "SalesPerson" ? (
         <>
           <div class="wrapper">
-            <Sidebar/>
+            <Sidebar />
 
             <div class="main fixed">
-            {/* <header id="header" class="header">
+              {/* <header id="header" class="header">
                 <nav class="navbar navbar-expand px-2 border-bottom">
                   <button
                     class="btn navbar-btn"
@@ -1613,16 +1661,17 @@ function Dashboard() {
                   </div>
                 </nav>
               </header> */}
-              <Header/>
+              <Header />
               <main class="content-salesman px-2 py-2">
                 <div class="container-fluid">
                   <div class="row pt-3">
                     <div class="col-lg-8 col-md-6 col-sm-6  px-4">
                       <div>
                         <i class="bi bi-chevron-left fw-bold"></i> &nbsp;{" "}
-                        <span class="fw-bold">
-                          Meeting Details
-                        </span>
+                        <span class="fw-bold">Meeting Details</span>
+                      </div>
+                      <div>
+                        <p>Recording Time: {passedTime}</p>
                       </div>
                       <div class="row pt-4 px-3">
                         <div class="col-lg-9 col-md-12 col-sm-12">
@@ -1632,21 +1681,37 @@ function Dashboard() {
                                 {ClientPeers.map((peer, index) => {
                                   return (
                                     <div key={index} className="client-video-1">
-                                      <video playsInline muted={muteClient} ref={clientVideo} autoPlay></video>
+                                      <video
+                                        playsInline
+                                        muted={muteClient}
+                                        ref={clientVideo}
+                                        autoPlay
+                                      ></video>
                                     </div>
                                   );
                                 })}
                               </div>
                               <div class="profile-overlay-salesman">
                                 {userVideo && (
-                                  <video playsInline muted ref={userVideo} autoPlay loop
+                                  <video
+                                    playsInline
+                                    muted
+                                    ref={userVideo}
+                                    autoPlay
+                                    loop
                                   ></video>
                                 )}
                               </div>
                               <div class="profile-overlay-salesman-2">
                                 {DealerPeers.map((peer, index) => {
                                   return (
-                                    <video key={index} playsInline muted={muteDealer} ref={dealerVideo} autoPlay></video>
+                                    <video
+                                      key={index}
+                                      playsInline
+                                      muted={muteDealer}
+                                      ref={dealerVideo}
+                                      autoPlay
+                                    ></video>
                                   );
                                 })}
                               </div>
@@ -1657,24 +1722,39 @@ function Dashboard() {
                                   <i class="bi bi-volume-up"></i>
                                 </button> */}
                                 {muted ? (
-                                  <button className="btn control-circle" onClick={() => unmuteMySelf()}>
+                                  <button
+                                    className="btn control-circle"
+                                    onClick={() => unmuteMySelf()}
+                                  >
                                     <i className="bi bi-mic-mute"></i>
                                   </button>
                                 ) : (
-                                  <button className="btn control-circle" onClick={() => muteMySelf()}>
+                                  <button
+                                    className="btn control-circle"
+                                    onClick={() => muteMySelf()}
+                                  >
                                     <i className="bi bi-mic"></i>
                                   </button>
                                 )}
-                                <button class="btn control-circle-red" onClick={()=>leaveCall()}>
+                                <button
+                                  class="btn control-circle-red"
+                                  onClick={() => leaveCall()}
+                                >
                                   <i class="bi bi-telephone-fill"></i>
                                 </button>
                                 {webCamStatus ? (
-                                  <button className="btn control-circle" onClick={() => toggleVideo()}>
-                                   <i className="bi bi-camera-video"></i>
+                                  <button
+                                    className="btn control-circle"
+                                    onClick={() => toggleVideo()}
+                                  >
+                                    <i className="bi bi-camera-video"></i>
                                   </button>
                                 ) : (
-                                  <button class="btn control-circle" onClick={() => toggleVideo()}>
-                                   <i className="bi bi-camera-video-off"></i>
+                                  <button
+                                    class="btn control-circle"
+                                    onClick={() => toggleVideo()}
+                                  >
+                                    <i className="bi bi-camera-video-off"></i>
                                   </button>
                                 )}
                                 {/* <button class="btn control-circle">
@@ -1702,8 +1782,11 @@ function Dashboard() {
                                   <img src={bulb} />
                                 </div>
                                 <div class="mt-4">
-                                  <button type="button" class="btn btn-sm btn-white w-100 fw-bold">
-                                   Vibe Score: {vibeScore}
+                                  <button
+                                    type="button"
+                                    class="btn btn-sm btn-white w-100 fw-bold"
+                                  >
+                                    Vibe Score: {vibeScore}
                                   </button>
                                 </div>
                               </div>
@@ -1718,19 +1801,63 @@ function Dashboard() {
                             <div class="card-body p-4 pt-3">
                               <div class="row chart-res">
                                 <div class="col-lg-12 col-md-10 col-sm-10 pt-1">
-                                  <span class="sentiment fs-3 fw-bold customer-emo"> Expression Analysis
+                                  <span class="sentiment fs-3 fw-bold customer-emo">
+                                    {" "}
+                                    Expression Analysis
                                   </span>
                                 </div>
                               </div>
 
                               <div class="skill-bars pt-2">
-                                <div className="bar" data-label="Happy" data-value="70" data-color="#712cf9" id="happy"></div>
-                                <div className="bar" data-label="Sad" data-value="30" data-color="#FFA500" id="sad"></div>
-                                <div className="bar" data-label="Neutral" data-value="50" data-color="#712cf9" id="disgusted"></div>
-                                <div className="bar" data-label="Content" data-value="25" data-color="#FFA500" id="neutral"></div>
-                                <div className="bar" data-label="Angry" data-value="10" data-color="#cc1717" id="angry"></div>
-                                <div className="bar" data-label="Surprised" data-value="10" data-color="#712cf9" id="surprised"></div>
-                                <div className="bar" data-label="Fearful" data-value="30" data-color="#FFA500" id="fearful"></div>
+                                <div
+                                  className="bar"
+                                  data-label="Happy"
+                                  data-value="70"
+                                  data-color="#712cf9"
+                                  id="happy"
+                                ></div>
+                                <div
+                                  className="bar"
+                                  data-label="Sad"
+                                  data-value="30"
+                                  data-color="#FFA500"
+                                  id="sad"
+                                ></div>
+                                <div
+                                  className="bar"
+                                  data-label="Neutral"
+                                  data-value="50"
+                                  data-color="#712cf9"
+                                  id="disgusted"
+                                ></div>
+                                <div
+                                  className="bar"
+                                  data-label="Content"
+                                  data-value="25"
+                                  data-color="#FFA500"
+                                  id="neutral"
+                                ></div>
+                                <div
+                                  className="bar"
+                                  data-label="Angry"
+                                  data-value="10"
+                                  data-color="#cc1717"
+                                  id="angry"
+                                ></div>
+                                <div
+                                  className="bar"
+                                  data-label="Surprised"
+                                  data-value="10"
+                                  data-color="#712cf9"
+                                  id="surprised"
+                                ></div>
+                                <div
+                                  className="bar"
+                                  data-label="Fearful"
+                                  data-value="30"
+                                  data-color="#FFA500"
+                                  id="fearful"
+                                ></div>
                               </div>
                             </div>
                           </div>
@@ -1741,12 +1868,27 @@ function Dashboard() {
                             <div class="card-body p-4 pt-3">
                               <div class="row chart-res">
                                 <div class="col-lg-12 col-md-10 col-sm-10 pt-1">
-                                  <span class="sentiment fs-5 fw-bold customer-vibe">Sentiment Analysis
+                                  <span class="sentiment fs-5 fw-bold customer-vibe">
+                                    Sentiment Analysis
                                   </span>
                                 </div>
                               </div>
                               <div class="chart-res d-flex justify-content-center align-items-center pt-2">
-                                <canvas id="sentiment-chart" aria-label="chart" height="294" width="400" data-labels="Positive, Negative, Neutral" data-data="20, 40, 22" data-bg-color="#b597f0" data-point-bg-color="#b597f0" data-border-color="black" data-border-width="1" data-point-radius="2" data-line-width="3" data-responsive="false"></canvas>
+                                <canvas
+                                  id="sentiment-chart"
+                                  aria-label="chart"
+                                  height="294"
+                                  width="400"
+                                  data-labels="Positive, Negative, Neutral"
+                                  data-data="20, 40, 22"
+                                  data-bg-color="#b597f0"
+                                  data-point-bg-color="#b597f0"
+                                  data-border-color="black"
+                                  data-border-width="1"
+                                  data-point-radius="2"
+                                  data-line-width="3"
+                                  data-responsive="false"
+                                ></canvas>
                               </div>
                             </div>
                           </div>
@@ -1754,16 +1896,33 @@ function Dashboard() {
                       </div>
                     </div>
 
-                    <div class="modal fade" id="tab1ModalLabel" tabindex="-1" aria-labelledby="tab1ModalLabel" aria-hidden="true">
+                    <div
+                      class="modal fade"
+                      id="tab1ModalLabel"
+                      tabindex="-1"
+                      aria-labelledby="tab1ModalLabel"
+                      aria-hidden="true"
+                    >
                       <div class="modal-dialog modal-fullscreen modal-dialog-centered modal-dialog-scrollable">
                         <div class="modal-content">
                           <div class="modal-header px-4">
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button
+                              type="button"
+                              class="btn-close"
+                              data-bs-dismiss="modal"
+                              aria-label="Close"
+                            ></button>
                           </div>
                           <div class="modal-body">
                             <div class="px-4">
-                              <button type="button" class="btn btn-dark btn-sm p-2">
-                                <div class="d-flex justify-content-center align-items-center" onClick={() => callOpenAI()}>
+                              <button
+                                type="button"
+                                class="btn btn-dark btn-sm p-2"
+                              >
+                                <div
+                                  class="d-flex justify-content-center align-items-center"
+                                  onClick={() => callOpenAI()}
+                                >
                                   <div class="circle d-flex justify-content-center align-items-center">
                                     <i class="bx bx-microphone"></i>
                                   </div>
@@ -1774,13 +1933,27 @@ function Dashboard() {
                             <div class="row pt-4 px-4">
                               {pitchInfo.map((data, index) => {
                                 return (
-                                  <div class="col-lg-12 col-md-12 col-sm-12" style={{ paddingBottom: "1.5em" }} key={index}>
+                                  <div class="col-lg-12 col-md-12 col-sm-12" style={{ paddingBottom: "1.5em" }} key={index}
+                                  >
                                     <div class="d-flex">
                                       <div class="circleBot d-flex justify-content-center align-items-center">
                                         <i class="bi bi-patch-question"></i>
                                       </div>
                                       <div class="d-flex gap-2 pb-2 align-items-center">
-                                      <span>magic<span style={{color: '#D273F2', fontSize: '1rem'}}>CX</span>   <span class="timeBotText">{data.time}  <span>{data.type}</span></span></span>  
+                                        <span>
+                                          magic
+                                          <span
+                                            style={{
+                                              color: "#D273F2",
+                                              fontSize: "1rem",
+                                            }}
+                                          >
+                                            CX
+                                          </span>{" "}
+                                          <span class="timeBotText">
+                                            {data.time} <span>{data.type}</span>
+                                          </span>
+                                        </span>
                                       </div>
                                     </div>
 
@@ -1795,40 +1968,83 @@ function Dashboard() {
                         </div>
                       </div>
                     </div>
-                    <div class="modal fade" id="tab2ModalLabel" tabindex="-1" aria-labelledby="tab2ModalLabel" aria-hidden="true">
+                    <div
+                      class="modal fade"
+                      id="tab2ModalLabel"
+                      tabindex="-1"
+                      aria-labelledby="tab2ModalLabel"
+                      aria-hidden="true"
+                    >
                       <div class="modal-dialog modal-fullscreen modal-dialog-centered modal-dialog-scrollable">
                         <div class="modal-content">
                           <div class="modal-header px-4">
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button
+                              type="button"
+                              class="btn-close"
+                              data-bs-dismiss="modal"
+                              aria-label="Close"
+                            ></button>
                           </div>
                           <div class="modal-body px-5" id="tabbbs">
                             <div class="row px-1">
                               <div class="col-lg-12 col-md-12 col-sm-12">
                                 {chatBoxData.map((data, index) => {
                                   return (
-                                    <div class="col-lg-12 col-md-12 col-sm-12" key={index}>
-                                      <div class={ data.name == "You"   ? "d-flex justify-content-end position-relative"   : "d-flex align-items-center"}>
+                                    <div
+                                      class="col-lg-12 col-md-12 col-sm-12"
+                                      key={index}
+                                    >
+                                      <div
+                                        class={
+                                          data.name == "You"
+                                            ? "d-flex justify-content-end position-relative"
+                                            : "d-flex align-items-center"
+                                        }
+                                      >
                                         <div class="circleBotImg d-flex justify-content-center align-items-center">
                                           {/* <div class="profile-img1">
                                             <span role="button"> */}
-                                          
+
                                           {/* </span>
 								                          </div> */}
                                         </div>
                                         <div class="d-flex gap-2 pb-2 align-items-center">
                                           <span class="textBot">
-                                          <Avatar name={data.name == "You"  ? "S"  : data.name } size={30} round={true}/> {data.name}
+                                            <Avatar
+                                              name={
+                                                data.name == "You"
+                                                  ? "S"
+                                                  : data.name
+                                              }
+                                              size={30}
+                                              round={true}
+                                            />{" "}
+                                            {data.name}
                                           </span>
                                           <span class="timeBotText">
                                             {data.time}
-                                          </span><br/><span class="timeBotText">
+                                          </span>
+                                          <br />
+                                          <span class="timeBotText">
                                             {data.email}
                                           </span>
                                         </div>
                                       </div>
-                                      <div className={ data.name == "Client"   ? "chatBox-1 position-relative"   : data.name == "You"   ? "chatBox-2 position-relative"   : "chatBox-3 position-relative"}>
+                                      <div
+                                        className={
+                                          data.name == "Client"
+                                            ? "chatBox-1 position-relative"
+                                            : data.name == "You"
+                                            ? "chatBox-2 position-relative"
+                                            : "chatBox-3 position-relative"
+                                        }
+                                      >
                                         <p class="p-text">{data.msg}</p>
-                                        <div className={getClassName(data.sentiment)}></div>
+                                        <div
+                                          className={getClassName(
+                                            data.sentiment
+                                          )}
+                                        ></div>
                                       </div>
                                       <br></br>
                                     </div>
@@ -1847,30 +2063,79 @@ function Dashboard() {
                           <div class="card genAi h-100">
                             <div class="card-body p-0">
                               <div class="tabs">
-                                <input type="radio" class="tabs__radio" name="tabs-example" id="tab1" onChange={()=>setTab("tab1")} checked={tab==="tab1"}/>
+                                <input
+                                  type="radio"
+                                  class="tabs__radio"
+                                  name="tabs-example"
+                                  id="tab1"
+                                  onChange={() => setTab("tab1")}
+                                  checked={tab === "tab1"}
+                                />
                                 <label for="tab1" class="tabs__label">
                                   <i class="bx bxs-brain fs-4"></i>
                                 </label>
-                                <div class="tabs__content tab_1_content p-2" id="aiFeatureTab">
+                                <div
+                                  class="tabs__content tab_1_content p-2"
+                                  id="aiFeatureTab"
+                                >
                                   <div class="d-flex pt-2 tab-1-buttons">
-                                    <button type="button" onClick={()=>setSelectedAIFeature("pitch")} className={aiFeature=="pitch"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
-                                      <div class="d-flex justify-content-center align-items-center" onClick={() => callOpenAI()}>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setSelectedAIFeature("pitch")
+                                      }
+                                      className={
+                                        aiFeature == "pitch"
+                                          ? "btn btn-dark btn-sm p-2"
+                                          : "btn btn-light-grey btn-sm p-2"
+                                      }
+                                    >
+                                      <div
+                                        class="d-flex justify-content-center align-items-center"
+                                        onClick={() => callOpenAI()}
+                                      >
                                         <div class="circle d-flex justify-content-center align-items-center">
                                           <i class="bx bx-microphone"></i>
                                         </div>
                                         <span class="text">Help Me Pitch!</span>
                                       </div>
                                     </button>
-                                    <button type="button" onClick={()=>setSelectedAIFeature("summarize")} className={aiFeature=="summarize"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
-                                      <div class="d-flex justify-content-center align-items-center" onClick={()=>addSummary()}>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setSelectedAIFeature("summarize")
+                                      }
+                                      className={
+                                        aiFeature == "summarize"
+                                          ? "btn btn-dark btn-sm p-2"
+                                          : "btn btn-light-grey btn-sm p-2"
+                                      }
+                                    >
+                                      <div
+                                        class="d-flex justify-content-center align-items-center"
+                                        onClick={() => addSummary()}
+                                      >
                                         <div class="circle2 d-flex justify-content-center align-items-center">
                                           <i class="bx bxs-file"></i>
                                         </div>
                                         <span class="text">Summarize</span>
                                       </div>
                                     </button>
-                                    <button type="button" onClick={()=>setSelectedAIFeature("productInfo")} className={aiFeature=="productInfo"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
-                                      <div class="d-flex justify-content-center align-items-center" onClick={()=>addProductInfo()}>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setSelectedAIFeature("productInfo")
+                                      }
+                                      className={
+                                        aiFeature == "productInfo"
+                                          ? "btn btn-dark btn-sm p-2"
+                                          : "btn btn-light-grey btn-sm p-2"
+                                      }
+                                    >
+                                      <div
+                                        class="d-flex justify-content-center align-items-center"
+                                        onClick={() => addProductInfo()}
+                                      >
                                         <div class="circle3 d-flex justify-content-center align-items-center">
                                           <i class="bx bxs-detail"></i>
                                         </div>
@@ -1883,18 +2148,36 @@ function Dashboard() {
                                     <div class="col-lg-12 col-md-12 col-sm-12">
                                       <div class="text-end">
                                         <p class="mb-1">
-                                          <span class="text-showAll" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample"> Show all
+                                          <span
+                                            class="text-showAll"
+                                            data-bs-toggle="collapse"
+                                            href="#collapseExample"
+                                            role="button"
+                                            aria-expanded="false"
+                                            aria-controls="collapseExample"
+                                          >
+                                            {" "}
+                                            Show all
                                           </span>
                                           <i class="bi bi-caret-down-fill icon-s"></i>
                                         </p>
                                       </div>
                                     </div>
 
-                                    <div class="collapse p-1 pb-2" id="collapseExample">
+                                    <div
+                                      class="collapse p-1 pb-2"
+                                      id="collapseExample"
+                                    >
                                       <div class="">
                                         <div class="d-flex gap-3 pt-2 tab-1-buttons">
-                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
-                                            <div class="d-flex justify-content-center align-items-center" onClick={() => callOpenAI()}>
+                                          <button
+                                            type="button"
+                                            class="btn btn-light-grey btn-sm p-2"
+                                          >
+                                            <div
+                                              class="d-flex justify-content-center align-items-center"
+                                              onClick={() => callOpenAI()}
+                                            >
                                               <div class="circle2 d-flex justify-content-center align-items-center">
                                                 <i class="bx bx-microphone"></i>
                                               </div>
@@ -1903,7 +2186,10 @@ function Dashboard() {
                                               </span>
                                             </div>
                                           </button>
-                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
+                                          <button
+                                            type="button"
+                                            class="btn btn-light-grey btn-sm p-2"
+                                          >
                                             <div class="d-flex justify-content-center align-items-center">
                                               <div class="circle2 d-flex justify-content-center align-items-center">
                                                 <i class="bx bxs-file"></i>
@@ -1913,7 +2199,19 @@ function Dashboard() {
                                               </span>
                                             </div>
                                           </button>
-                                          <button type="button" onClick={()=>setSelectedAIFeature("productInfo")} className={aiFeature=="productInfo"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              setSelectedAIFeature(
+                                                "productInfo"
+                                              )
+                                            }
+                                            className={
+                                              aiFeature == "productInfo"
+                                                ? "btn btn-dark btn-sm p-2"
+                                                : "btn btn-light-grey btn-sm p-2"
+                                            }
+                                          >
                                             <div class="d-flex justify-content-center align-items-center">
                                               <div class="circle3 d-flex justify-content-center align-items-center">
                                                 <i class="bx bxs-detail"></i>
@@ -1925,8 +2223,14 @@ function Dashboard() {
                                           </button>
                                         </div>
                                         <div class="d-flex gap-3 pt-2 tab-1-buttons">
-                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
-                                            <div class="d-flex justify-content-center align-items-center" onClick={() => callOpenAI()}>
+                                          <button
+                                            type="button"
+                                            class="btn btn-light-grey btn-sm p-2"
+                                          >
+                                            <div
+                                              class="d-flex justify-content-center align-items-center"
+                                              onClick={() => callOpenAI()}
+                                            >
                                               <div class="circle2 d-flex justify-content-center align-items-center">
                                                 <i class="bx bx-microphone"></i>
                                               </div>
@@ -1935,7 +2239,10 @@ function Dashboard() {
                                               </span>
                                             </div>
                                           </button>
-                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
+                                          <button
+                                            type="button"
+                                            class="btn btn-light-grey btn-sm p-2"
+                                          >
                                             <div class="d-flex justify-content-center align-items-center">
                                               <div class="circle2 d-flex justify-content-center align-items-center">
                                                 <i class="bx bxs-file"></i>
@@ -1966,7 +2273,12 @@ function Dashboard() {
                                   <div class="row pt-2 tabExpandBorder">
                                     <div class="col-lg-12 col-md-12 col-sm-12">
                                       <div class="d-flex justify-content-end ">
-                                        <i class="bi bi-arrows-angle-expand btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#tab1ModalLabel"></i>
+                                        <i
+                                          class="bi bi-arrows-angle-expand btn btn-primary"
+                                          type="button"
+                                          data-bs-toggle="modal"
+                                          data-bs-target="#tab1ModalLabel"
+                                        ></i>
                                       </div>
                                     </div>
                                   </div>
@@ -1974,19 +2286,31 @@ function Dashboard() {
                                   <div class="row pt-1 px-3">
                                     {pitchInfo.map((data, index) => {
                                       return (
-                                        <div class="col-lg-12 col-md-12 col-sm-12" style={{ paddingBottom: "1.5em" }} key={index}>
+                                        <div
+                                          class="col-lg-12 col-md-12 col-sm-12"
+                                          style={{ paddingBottom: "1.5em" }}
+                                          key={index}
+                                        >
                                           <div class="d-flex">
                                             <div class="circleBot d-flex justify-content-center align-items-center">
                                               <i class="bi bi-patch-question"></i>
-                                              
                                             </div>
                                             <div class="d-flex gap-2 pb-2 align-items-center">
                                               <span>
-                                                magic<span style={{color: '#D273F2', fontSize: '1rem'}}>CX</span>   <span class="timeBotText">
-                                                {data.time}  <span>{data.type}</span>
+                                                magic
+                                                <span
+                                                  style={{
+                                                    color: "#D273F2",
+                                                    fontSize: "1rem",
+                                                  }}
+                                                >
+                                                  CX
+                                                </span>{" "}
+                                                <span class="timeBotText">
+                                                  {data.time}{" "}
+                                                  <span>{data.type}</span>
+                                                </span>
                                               </span>
-                                              </span>
-                                              
                                             </div>
                                           </div>
 
@@ -1999,15 +2323,30 @@ function Dashboard() {
                                   </div>
                                 </div>
 
-                                <input type="radio" class="tabs__radio" name="tabs-example" id="tab2" onChange={()=>setTab("tab2")} checked={tab==="tab2"}/>
+                                <input
+                                  type="radio"
+                                  class="tabs__radio"
+                                  name="tabs-example"
+                                  id="tab2"
+                                  onChange={() => setTab("tab2")}
+                                  checked={tab === "tab2"}
+                                />
                                 <label for="tab2" class="tabs__label">
                                   <i class="bx bxs-message fs-4"></i>
                                 </label>
-                                <div class="tabs__content tab_2_content" id="tabs">
+                                <div
+                                  class="tabs__content tab_2_content"
+                                  id="tabs"
+                                >
                                   <div class="row">
                                     <div class="col-lg-12 col-md-12 col-sm-12">
                                       <div class="d-flex justify-content-end ">
-                                        <i class="bi bi-arrows-angle-expand btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#tab2ModalLabel"></i>
+                                        <i
+                                          class="bi bi-arrows-angle-expand btn btn-primary"
+                                          type="button"
+                                          data-bs-toggle="modal"
+                                          data-bs-target="#tab2ModalLabel"
+                                        ></i>
                                       </div>
                                     </div>
                                   </div>
@@ -2015,8 +2354,17 @@ function Dashboard() {
                                   <div class="row px-1">
                                     {chatBoxData.map((data, index) => {
                                       return (
-                                        <div class="col-lg-12 col-md-12 col-sm-12" key={index}>
-                                          <div class={data.name == "You"  ? "d-flex justify-content-end position-relative"  : "d-flex align-items-center"}>
+                                        <div
+                                          class="col-lg-12 col-md-12 col-sm-12"
+                                          key={index}
+                                        >
+                                          <div
+                                            class={
+                                              data.name == "You"
+                                                ? "d-flex justify-content-end position-relative"
+                                                : "d-flex align-items-center"
+                                            }
+                                          >
                                             <div class="circleBotImg d-flex justify-content-center align-items-center">
                                               {/* <Avatar
                                                 size={30}
@@ -2030,19 +2378,31 @@ function Dashboard() {
                                             </div>
                                             <div class="d-flex gap-2 pb-2 align-items-center">
                                               <span class="textBot">
-                                              <Avatar size={30} round={true} name={data.name == "You"? "S"  : data.name }/> {data.name}
+                                                <Avatar
+                                                  size={30}
+                                                  round={true}
+                                                  name={
+                                                    data.name == "You"
+                                                      ? "S"
+                                                      : data.name
+                                                  }
+                                                />{" "}
+                                                {data.name}
                                               </span>
                                               <span class="timeBotText">
                                                 {data.time}
-                                              </span><br/>
+                                              </span>
+                                              <br />
                                               <span class="timeBotText">
-                                            {data.email}
-                                          </span>
+                                                {data.email}
+                                              </span>
                                             </div>
                                           </div>
-                                          <div className={data.name == "Client"  ? "chatBox-1 position-relative": data.name == "You"? "chatBox-2 position-relative" : "chatBox-3 position-relative" }>
+                                          <div
+                                            className={data.name == "Client"  ? "chatBox-1 position-relative"  : data.name == "You"  ? "chatBox-2 position-relative"  : "chatBox-3 position-relative"}
+                                          >
                                             <p class="p-text">{data.msg}</p>
-                                            <div className={getClassName(data.sentiment )}></div>
+                                            <div className={getClassName(   data.sentiment )}></div>
                                           </div>
                                           <br></br>
                                         </div>
@@ -2051,174 +2411,54 @@ function Dashboard() {
                                   </div>
                                 </div>
 
-                                <input type="radio" class="tabs__radio" name="tabs-example" id="tab3" onChange={()=>setTab("tab3")} checked={tab==="tab3"}/>
+                                <input type="radio" class="tabs__radio" name="tabs-example" id="tab3" onChange={() => setTab("tab3")} checked={tab === "tab3"}/>
                                 <label for="tab3" class="tabs__label">
                                   <i class="bx bxs-file fs-4"></i>
                                 </label>
                                 <div class="tabs__content tab_1_content p-2" id="aiFeatureTab">
-                                    {/* <PDFViewer /> */}
+                                  {pdfFiles.map((data, index) => {
+                                    return (
+                                      <div class="col-lg-12 col-md-12 col-sm-12" style={{ paddingBottom: "1.5em" }} key={index}>
+                                    <div class="d-flex">
+                                      <div class="d-flex gap-2 pb-2 align-items-center">
+                                        <span>magic<span style={{   color: "#D273F2",   fontSize: "1rem", }}>CX</span>{" "}</span>
+                                      </div>
+                                    </div>
+
+                                    <div class="chatBox">
+                                    <span>Visit here for {data.name}</span>: <a href={data.path} rel="noopener" target="_blank" className="p-text" style={{color: '#006EDF',textDecoration:'underline'}}> {data.name} </a> 
+                                    </div>
+                                  </div>
+                                    );
+                                  })}
                                 </div>
 
-                                <input type="radio" class="tabs__radio" name="tabs-example" id="tab4"/>
+                                <input type="radio" class="tabs__radio" name="tabs-example" id="tab4" onChange={() => setTab("tab4")} checked={tab === "tab4"}/>
                                 <label for="tab4" class="tabs__label">
                                   <i class="bx bxs-video fs-4"></i>
                                 </label>
-                                {/* <div class="tabs__content tab_1_content p-2" id="aiFeatureTab">
-                                  <div class="d-flex pt-2 tab-1-buttons">
-                                    <button type="button" onClick={()=>setSelectedAIFeature("pitch")} className={aiFeature=="pitch"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
-                                      <div class="d-flex justify-content-center align-items-center" onClick={() => callOpenAI()}>
-                                        <div class="circle d-flex justify-content-center align-items-center">
-                                          <i class="bx bx-microphone"></i>
-                                        </div>
-                                        <span class="text">Help Me Pitch!</span>
-                                      </div>
-                                    </button>
-                                    <button type="button" onClick={()=>setSelectedAIFeature("summarize")} className={aiFeature=="summarize"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
-                                      <div class="d-flex justify-content-center align-items-center" onClick={()=>addSummary()}>
-                                        <div class="circle2 d-flex justify-content-center align-items-center">
-                                          <i class="bx bxs-file"></i>
-                                        </div>
-                                        <span class="text">Summarize</span>
-                                      </div>
-                                    </button>
-                                    <button type="button" onClick={()=>setSelectedAIFeature("pInfo")} className={aiFeature=="pInfo"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
-                                      <div class="d-flex justify-content-center align-items-center">
-                                        <div class="circle2 d-flex justify-content-center align-items-center">
-                                        <i class="bx bxs-detail"></i>
-                                        </div>
-                                        <span class="text">Product Info</span>
-                                      </div>
-                                    </button>
-                                    <button type="button" onClick={()=>setSelectedAIFeature("productInfo")} className={aiFeature=="productInfo"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
-                                      <div class="d-flex justify-content-center align-items-center">
-                                        <div class="circle3 d-flex justify-content-center align-items-center">
-                                          <i class="bx bxs-detail"></i>
-                                        </div>
-                                        <span class="text">Product Info</span>
-                                      </div>
-                                    </button>
-                                  </div>
-
-                                  <div class="row px-2 pt-1 showAll">
-                                    <div class="col-lg-12 col-md-12 col-sm-12">
-                                      <div class="text-end">
-                                        <p class="mb-1">
-                                          <span class="text-showAll" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample"> Show all
-                                          </span>
-                                          <i class="bi bi-caret-down-fill icon-s"></i>
-                                        </p>
+                                <div class="tabs__content tab_1_content p-2" id="aiFeatureTab">
+                                <div class="col-lg-12 col-md-12 col-sm-12" style={{ paddingBottom: "1.5em" }}>
+                                    <div class="d-flex">
+                                      <div class="d-flex gap-2 pb-2 align-items-center">
+                                        <span>magic<span style={{   color: "#D273F2",   fontSize: "1rem", }}>CX</span>{" "}</span>
                                       </div>
                                     </div>
 
-                                    <div class="collapse p-1 pb-2" id="collapseExample">
-                                      <div class="">
-                                        <div class="d-flex gap-3 pt-2 tab-1-buttons">
-                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
-                                            <div class="d-flex justify-content-center align-items-center" onClick={() => callOpenAI()}>
-                                              <div class="circle2 d-flex justify-content-center align-items-center">
-                                                <i class="bx bx-microphone"></i>
-                                              </div>
-                                              <span class="text">
-                                                Help me Pitch!
-                                              </span>
-                                            </div>
-                                          </button>
-                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
-                                            <div class="d-flex justify-content-center align-items-center">
-                                              <div class="circle2 d-flex justify-content-center align-items-center">
-                                                <i class="bx bxs-file"></i>
-                                              </div>
-                                              <span class="text">
-                                                Summarize
-                                              </span>
-                                            </div>
-                                          </button>
-                                          <button type="button" onClick={()=>setSelectedAIFeature("productInfo")} className={aiFeature=="productInfo"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"}>
-                                            <div class="d-flex justify-content-center align-items-center">
-                                              <div class="circle3 d-flex justify-content-center align-items-center">
-                                                <i class="bx bxs-detail"></i>
-                                              </div>
-                                              <span class="text">
-                                                Product Info
-                                              </span>
-                                            </div>
-                                          </button>
-                                        </div>
-                                        <div class="d-flex gap-3 pt-2 tab-1-buttons">
-                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
-                                            <div class="d-flex justify-content-center align-items-center" onClick={() => callOpenAI()}>
-                                              <div class="circle2 d-flex justify-content-center align-items-center">
-                                                <i class="bx bx-microphone"></i>
-                                              </div>
-                                              <span class="text">
-                                                Help me Pitch!
-                                              </span>
-                                            </div>
-                                          </button>
-                                          <button type="button" class="btn btn-light-grey btn-sm p-2">
-                                            <div class="d-flex justify-content-center align-items-center">
-                                              <div class="circle2 d-flex justify-content-center align-items-center">
-                                                <i class="bx bxs-file"></i>
-                                              </div>
-                                              <span class="text">
-                                                Summarize
-                                              </span>
-                                            </div>
-                                          </button>
-                                          <button
-                                            type="button"
-                                            class="btn btn-light-grey btn-sm p-2"
-                                          >
-                                            <div onClick={()=>setSelectedAIFeature("productInfo")} className={aiFeature=="productInfo"?"btn btn-dark btn-sm p-2":"btn btn-light-grey btn-sm p-2"} >
-                                              <div class="circle3 d-flex justify-content-center align-items-center">
-                                                <i class="bx bxs-detail"></i>
-                                              </div>
-                                              <span class="text">
-                                                Product Info
-                                              </span>
-                                            </div>
-                                          </button>
-                                        </div>
-                                      </div>
+                                    <div class="chatBox" onClick={()=>{
+                                      // <Redire
+                                    }}>
+                                    <ReactPlayer url='/document/MagicCX.mp4' height="20%" width="100%" onClick={()=>{
+                                      window.open("/document/MagicCX.mp4")
+                                    }}
+                                    controls
+                                    />
                                     </div>
                                   </div>
-
-                                  <div class="row pt-2 tabExpandBorder">
-                                    <div class="col-lg-12 col-md-12 col-sm-12">
-                                      <div class="d-flex justify-content-end ">
-                                        <i class="bi bi-arrows-angle-expand btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#tab1ModalLabel"></i>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <div class="row pt-1 px-3">
-                                    {pitchInfo.map((data, index) => {
-                                      return (
-                                        <div class="col-lg-12 col-md-12 col-sm-12" style={{ paddingBottom: "1.5em" }} key={index}>
-                                          <div class="d-flex">
-                                            <div class="circleBot d-flex justify-content-center align-items-center">
-                                              <i class="bi bi-patch-question"></i>
-                                              
-                                            </div>
-                                            <div class="d-flex gap-2 pb-2 align-items-center">
-                                              <span>
-                                                magic<span style={{color: '#D273F2', fontSize: '1rem'}}>CX</span>   <span class="timeBotText">
-                                                {data.time}  <span>{data.type}</span>
-                                              </span>
-                                              </span>
-                                              
-                                            </div>
-                                          </div>
-
-                                          <div class="chatBox">
-                                            <p class="p-text">{data.info}</p>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div> */}
-
+                                  {/* <div class="row pt-1 px-3">
+                                    <ReactPlayer url="https://ak.picdn.net/shutterstock/videos/1070767552/preview/stock-footage-beef-burger-ingredients-falling-and-landing-in-the-bun-one-by-one-in-slow-motion-fps.webm" playing loop autoPlay height="20%" width="100%"/>
+                                  </div> */}
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -2254,18 +2494,36 @@ function Dashboard() {
                           }
                           {peers.map((peer, index) => {
                             return (
-                              <video key={peer.peerID} playsInline muted={muteSalesPerson} ref={salespersonVideo} autoPlay></video>
+                              <video
+                                key={peer.peerID}
+                                playsInline
+                                muted={muteSalesPerson}
+                                ref={salespersonVideo}
+                                autoPlay
+                              ></video>
                             );
                           })}
                           {DealerPeers.map((peer, index) => {
                             return (
-                              <video key={index} playsInline muted={muteDealer} ref={dealerVideo} autoPlay></video>
+                              <video
+                                key={index}
+                                playsInline
+                                muted={muteDealer}
+                                ref={dealerVideo}
+                                autoPlay
+                              ></video>
                             );
                           })}
 
                           <div className="profile-overlay-client">
                             {userVideo && (
-                              <video playsInline muted ref={userVideo} autoPlay loop></video>
+                              <video
+                                playsInline
+                                muted
+                                ref={userVideo}
+                                autoPlay
+                                loop
+                              ></video>
                             )}
                           </div>
                         </div>
@@ -2276,27 +2534,42 @@ function Dashboard() {
                               <i className="bi bi-volume-up"></i>
                             </button> */}
                             {muted ? (
-                              <button className="btn control-circle-client" onClick={() => unmuteMySelf()}>
-                               <i className="bi bi-mic-mute"></i>
+                              <button
+                                className="btn control-circle-client"
+                                onClick={() => unmuteMySelf()}
+                              >
+                                <i className="bi bi-mic-mute"></i>
                               </button>
                             ) : (
-                              <button className="btn control-circle-client" onClick={() => muteMySelf()}>
-                               <i className="bi bi-mic"></i>
+                              <button
+                                className="btn control-circle-client"
+                                onClick={() => muteMySelf()}
+                              >
+                                <i className="bi bi-mic"></i>
                               </button>
                             )}
                             {/* <button className="btn control-circle-client" onClick={()=>muteMySelf()}>
 																<i className={muted?"bi bi-mic-mute": "bi bi-mic"}></i>
 															</button> */}
-                            <button className="btn control-circle-red-client" onClick={() => leaveCall()}>
-                             <i className="bi bi-telephone-fill"></i>
+                            <button
+                              className="btn control-circle-red-client"
+                              onClick={() => leaveCall()}
+                            >
+                              <i className="bi bi-telephone-fill"></i>
                             </button>
                             {webCamStatus ? (
-                              <button class="btn control-circle-client" onClick={() => toggleVideo()}>
-                               <i className="bi bi-camera-video"></i>
+                              <button
+                                class="btn control-circle-client"
+                                onClick={() => toggleVideo()}
+                              >
+                                <i className="bi bi-camera-video"></i>
                               </button>
                             ) : (
-                              <button class="btn control-circle-client" onClick={() => toggleVideo()}>
-                               <i className="bi bi-camera-video-off"></i>
+                              <button
+                                class="btn control-circle-client"
+                                onClick={() => toggleVideo()}
+                              >
+                                <i className="bi bi-camera-video-off"></i>
                               </button>
                             )}
                             {/* <button className="btn control-circle-client">
@@ -2335,18 +2608,36 @@ function Dashboard() {
                           }
                           {peers.map((peer, index) => {
                             return (
-                              <video key={peer.peerID} playsInline ref={salespersonVideo} muted={muteSalesPerson} autoPlay></video>
+                              <video
+                                key={peer.peerID}
+                                playsInline
+                                ref={salespersonVideo}
+                                muted={muteSalesPerson}
+                                autoPlay
+                              ></video>
                             );
                           })}
                           {ClientPeers.map((peer, index) => {
                             return (
-                              <video key={index} playsInline muted={muteClient} ref={clientVideo} autoPlay></video>
+                              <video
+                                key={index}
+                                playsInline
+                                muted={muteClient}
+                                ref={clientVideo}
+                                autoPlay
+                              ></video>
                             );
                           })}
 
                           <div className="profile-overlay-client">
                             {userVideo && (
-                              <video playsInline muted ref={userVideo} autoPlay loop></video>
+                              <video
+                                playsInline
+                                muted
+                                ref={userVideo}
+                                autoPlay
+                                loop
+                              ></video>
                             )}
                           </div>
                         </div>
@@ -2357,27 +2648,42 @@ function Dashboard() {
                               <i className="bi bi-volume-up"></i>
                             </button> */}
                             {muted ? (
-                              <button className="btn control-circle-client" onClick={() => unmuteMySelf()}>
+                              <button
+                                className="btn control-circle-client"
+                                onClick={() => unmuteMySelf()}
+                              >
                                 <i className="bi bi-mic-mute"></i>
                               </button>
                             ) : (
-                              <button className="btn control-circle-client" onClick={() => muteMySelf()}>
+                              <button
+                                className="btn control-circle-client"
+                                onClick={() => muteMySelf()}
+                              >
                                 <i className="bi bi-mic"></i>
                               </button>
                             )}
                             {/* <button className="btn control-circle-client" onClick={()=>muteMySelf()}>
 																<i className={muted?"bi bi-mic-mute": "bi bi-mic"}></i>
 															</button> */}
-                            <button className="btn control-circle-red-client" onClick={() => leaveCall()}>
+                            <button
+                              className="btn control-circle-red-client"
+                              onClick={() => leaveCall()}
+                            >
                               <i className="bi bi-telephone-fill"></i>
                             </button>
                             {webCamStatus ? (
-                              <button class="btn control-circle-client" onClick={() => toggleVideo()}>
-                               <i className="bi bi-camera-video"></i>
+                              <button
+                                class="btn control-circle-client"
+                                onClick={() => toggleVideo()}
+                              >
+                                <i className="bi bi-camera-video"></i>
                               </button>
                             ) : (
-                              <button class="btn control-circle-client" onClick={() => toggleVideo()}>
-                               <i className="bi bi-camera-video-off"></i>
+                              <button
+                                class="btn control-circle-client"
+                                onClick={() => toggleVideo()}
+                              >
+                                <i className="bi bi-camera-video-off"></i>
                               </button>
                             )}
                             {/* <button className="btn control-circle-client">

@@ -1838,6 +1838,12 @@ a.sidebar-link:hover {
       font-size: 20px!important;
       color: #FFA500;
     }
+    .pdf-file {
+      position: relative;
+      font-family: "Poppins", sans-serif;
+      font-size: 20px!important;
+      color: #FFA500;
+    }
 
     .circular-progress2 i {
       position: relative;
