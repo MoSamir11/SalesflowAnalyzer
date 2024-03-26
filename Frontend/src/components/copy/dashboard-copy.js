@@ -1,10 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  useLocation,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams} from "react-router-dom";
 import Peer from "simple-peer";
 import io from "socket.io-client";
 import Avatar from "@mui/material/Avatar";
@@ -17,10 +12,7 @@ import axios from "axios";
 import { isWithGender } from "face-api.js";
 import Chart from "chart.js/auto";
 import { getRelativePosition } from "chart.js/helpers";
-import {
-  TextAnalyticsClient,
-  AzureKeyCredential,
-} from "@azure/ai-text-analytics";
+import {TextAnalyticsClient,AzureKeyCredential,} from "@azure/ai-text-analytics";
 import { useRecordWebcam } from "react-record-webcam";
 import RecordRTC, { RecordRTCPromiseHandler } from "recordrtc";
 import useScreenRecorder from "use-screen-recorder";
@@ -1523,16 +1515,12 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
                               <b>Generate AI Response</b>
                             </button>
                           </div>
-                          <div
-                            className="card-body"
-                            id="aidivspeech"
-                            style={{ maxHeight: "350px", overflowY: "scroll" }}
-                          ></div>
+                          <div className="card-body" id="aidivspeech" style={{ maxHeight: "350px", overflowY: "scroll" }}></div>
                         </div>
                       </div>
                     </div>
                     <div>
-                      {/* {(status === "idle" || status === "permission-requested" || status === "error") && (
+                      {(status === "idle" || status === "permission-requested" || status === "error") && (
                         <button onClick={() => recording()}>
                           Start recording
                         </button>
@@ -1543,7 +1531,7 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
                         </button>
                       )}
 					            <p id="bloburls">{mediaBlobUrl}</p>
-					            <p id="Samir">Hello World</p> */}
+					            <p id="Samir">Hello World</p>
                     </div>
                   </div>
 
@@ -1822,36 +1810,18 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
                             }
                             {peers.map((peer, index) => {
                               return (
-                                <video
-                                  key={peer.peerID}
-                                  playsInline
-                                  ref={salespersonVideo}
-                                  muted={muteSalesPerson}
-                                  autoPlay
-                                ></video>
+                                <video key={peer.peerID} playsInline ref={salespersonVideo} muted={muteSalesPerson} autoPlay></video>
                               );
                             })}
                             {ClientPeers.map((peer, index) => {
                               return (
-                                <video
-                                  key={index}
-                                  playsInline
-                                  muted={muteClient}
-                                  ref={clientVideo}
-                                  autoPlay
-                                ></video>
+                                <video key={index} playsInline muted={muteClient} ref={clientVideo} autoPlay></video>
                               );
                             })}
 
                             <div className="profile-overlay-client">
                               {userVideo && (
-                                <video
-                                  playsInline
-                                  muted={muted}
-                                  ref={userVideo}
-                                  autoPlay
-                                  loop
-                                ></video>
+                                <video playsInline muted={muted} ref={userVideo} autoPlay loop></video>
                               )}
                             </div>
                           </div>
@@ -1862,17 +1832,11 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
                                 <i className="bi bi-volume-up"></i>
                               </button>
                               {muted ? (
-                                <button
-                                  className="btn control-circle-client"
-                                  onClick={() => unmuteMySelf()}
-                                >
+                                <button className="btn control-circle-client" onClick={() => unmuteMySelf()}>
                                   <i className="bi bi-mic-mute"></i>
                                 </button>
                               ) : (
-                                <button
-                                  className="btn control-circle-client"
-                                  onClick={() => muteMySelf()}
-                                >
+                                <button className="btn control-circle-client" onClick={() => muteMySelf()}>
                                   <i className="bi bi-mic"></i>
                                 </button>
                               )}
@@ -1886,16 +1850,11 @@ const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRec
                                 <i className="bi bi-telephone-fill"></i>
                               </button>
                               {webCamStatus ? (
-                                <button
-                                  class="btn control-circle-client"
-                                  onClick={() => toggleVideo()}
-                                >
+                                <button class="btn control-circle-client" onClick={() => toggleVideo()}>
                                   <i className="bi bi-camera-video"></i>
                                 </button>
                               ) : (
-                                <button
-                                  class="btn control-circle-client"
-                                  onClick={() => toggleVideo()}
+                                <button class="btn control-circle-client" onClick={() => toggleVideo()}
                                 >
                                   <i className="bi bi-camera-video-off"></i>
                                 </button>

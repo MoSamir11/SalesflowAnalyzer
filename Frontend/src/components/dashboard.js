@@ -95,6 +95,7 @@ const ClientVideo2 = (props) => {
 
 function Dashboard() {
   const { chatroom } = useParams();
+  // console.log(chatroom);
   const urlParams = new URLSearchParams(window.location.search);
   const [roomID, setRoomID] = useState(chatroom);
   const navigate = useNavigate();
@@ -167,8 +168,8 @@ function Dashboard() {
   const [tab, setTab] = useState("tab2");
   const [vibeScore, setVibeScore] = useState("");
   const [aiFeature, setSelectedAIFeature] = useState("pitch");
-  // let url ="https://magiccx.azurewebsites.net/";
-  let url = "http://localhost:3000/";
+  let url ="https://magiccx.azurewebsites.net/";
+  // let url = "http://localhost:3000/";
   const pdfFiles = [
     { name: "Introduction", path: `${url}document/Introduction.pdf` },
     { name: "Features", path: `${url}document/Features.pdf` },
@@ -184,6 +185,8 @@ function Dashboard() {
     SpeechSDK = window.SpeechSDK;
     //setSpeechSDK(window.SpeechSDK)
   }
+
+  
 
   let region = "eastus";
   var reco;
@@ -225,16 +228,8 @@ function Dashboard() {
           const dealer_peers = [];
           users.forEach((obj) => {
             // //console.log(`146--> ${JSON.stringify(obj.audio)}`);
-            const peer = createPeer(
-              obj.id,
-              socketRef.current.id,
-              stream,
-              obj.role
-            );
-            peersRef.current.push({
-              peerID: obj.id,
-              peer,
-            });
+            const peer = createPeer( obj.id, socketRef.current.id, stream, obj.role);
+            peersRef.current.push({ peerID: obj.id, peer});
             if (obj.role == "SalesPerson") {
               peer.on("stream", (stream) => {
                 salespersonVideo.current.srcObject = stream;
@@ -360,9 +355,15 @@ function Dashboard() {
         // })
 
         socketRef.current.on("disconnected",async(data)=>{
-        console.log("user-disconnected")
-        	console.log('354-->',data,peersRef);
-          // await peersRef.current.filter((data)=>data.peerID !== data);
+          console.log('363-->',data);
+        if(data.role=="Client"){
+          setClientPeers([]);
+          setClientStream(null);
+        } else if(data.role=="Dealer"){
+          setDealerPeers([]);
+          setDealerStream(null)
+        }
+        // setClientPeers([])
         });
 
         // socketRef.current.on("user:left",(id)=>{
@@ -446,7 +447,7 @@ function Dashboard() {
       socketRef.current.emit("salesperson-disconnected", {
         roomID: roomID,
         id: socketRef.current.id,
-        msg: customerResponse,
+        msg: addSummary(),
         sentiment: customerResponse
       });
       window.location.href = "/";
@@ -454,10 +455,12 @@ function Dashboard() {
     }
     
     socketRef.current.emit("disconnectUser", {
-      roomID,
+      roomId: roomID,
       id: socketRef.current.id,
       msg: conversation,
+      person: person
     });
+    
     window.location.href = "/";
   };
 
@@ -539,7 +542,7 @@ function Dashboard() {
         { info: text, time: time, type: "Summary" },
         ...prevState
       ]);
-
+      return text
       // document.getElementById("aiFeatureTab").scrollTop =
       //   document.getElementById("aiFeatureTab").scrollHeight;
     } catch (e) {
@@ -1568,6 +1571,12 @@ function Dashboard() {
     }
   }
 
+  async function recording() {
+    setIsRecording(true);
+    startRecording();
+	// setBlobUrl(mediaBlobUrl)
+  }
+
   return (
     /*
 	<div>
@@ -1616,7 +1625,6 @@ function Dashboard() {
 	*/
 
     <>
-      {/* <div className="main fixed"> */}
       {person == "SalesPerson" ? (
         <>
           <div class="wrapper">
@@ -1681,37 +1689,20 @@ function Dashboard() {
                                 {ClientPeers.map((peer, index) => {
                                   return (
                                     <div key={index} className="client-video-1">
-                                      <video
-                                        playsInline
-                                        muted={muteClient}
-                                        ref={clientVideo}
-                                        autoPlay
-                                      ></video>
+                                      <video playsInline muted={muteClient} ref={clientVideo} autoPlay></video>
                                     </div>
                                   );
                                 })}
                               </div>
                               <div class="profile-overlay-salesman">
                                 {userVideo && (
-                                  <video
-                                    playsInline
-                                    muted
-                                    ref={userVideo}
-                                    autoPlay
-                                    loop
-                                  ></video>
+                                  <video playsInline muted ref={userVideo} autoPlay loop></video>
                                 )}
                               </div>
                               <div class="profile-overlay-salesman-2">
                                 {DealerPeers.map((peer, index) => {
                                   return (
-                                    <video
-                                      key={index}
-                                      playsInline
-                                      muted={muteDealer}
-                                      ref={dealerVideo}
-                                      autoPlay
-                                    ></video>
+                                    <video key={index} playsInline muted={muteDealer} ref={dealerVideo} autoPlay></video>
                                   );
                                 })}
                               </div>
@@ -1722,38 +1713,24 @@ function Dashboard() {
                                   <i class="bi bi-volume-up"></i>
                                 </button> */}
                                 {muted ? (
-                                  <button
-                                    className="btn control-circle"
-                                    onClick={() => unmuteMySelf()}
-                                  >
+                                  <button className="btn control-circle" onClick={() => unmuteMySelf()}>
                                     <i className="bi bi-mic-mute"></i>
                                   </button>
                                 ) : (
-                                  <button
-                                    className="btn control-circle"
-                                    onClick={() => muteMySelf()}
+                                  <button className="btn control-circle" onClick={() => muteMySelf()}
                                   >
                                     <i className="bi bi-mic"></i>
                                   </button>
                                 )}
-                                <button
-                                  class="btn control-circle-red"
-                                  onClick={() => leaveCall()}
-                                >
+                                <button class="btn control-circle-red" onClick={() => leaveCall()}>
                                   <i class="bi bi-telephone-fill"></i>
                                 </button>
                                 {webCamStatus ? (
-                                  <button
-                                    className="btn control-circle"
-                                    onClick={() => toggleVideo()}
-                                  >
+                                  <button className="btn control-circle" onClick={() => toggleVideo()}>
                                     <i className="bi bi-camera-video"></i>
                                   </button>
                                 ) : (
-                                  <button
-                                    class="btn control-circle"
-                                    onClick={() => toggleVideo()}
-                                  >
+                                  <button class="btn control-circle" onClick={() => toggleVideo()}>
                                     <i className="bi bi-camera-video-off"></i>
                                   </button>
                                 )}
@@ -1764,6 +1741,7 @@ function Dashboard() {
                             </div>
                           </div>
                         </div>
+                        
                         <div class="col-lg-3 col-md-12 col-sm-12 pb-res">
                           <div class="card vibeMeter">
                             <div class="card-body">
@@ -1793,6 +1771,16 @@ function Dashboard() {
                             </div>
                           </div>
                         </div>
+                        {(status === "idle" || status === "permission-requested" || status === "error") && (
+                        <button onClick={() => recording()}>
+                          Start recording
+                        </button>
+                        )}
+                        {(status === "recording" || status === "paused") && (
+                        <button onClick={() => stopRecord()}>Stop recording</button>
+                        )}
+					              <p id="bloburls">{mediaBlobUrl}</p>
+					              <p id="Samir">Hello World</p>
                       </div>
 
                       <div class="row pt-3 px-3">

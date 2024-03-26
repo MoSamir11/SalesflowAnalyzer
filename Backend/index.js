@@ -424,7 +424,7 @@ const fs = require('fs');
             
             const res = await axios.post("https://magiccxhs.azurewebsites.net/update-ticket",{
               "meetingURL": "https://magiccx.azurewebsites.net/"+data.roomID,
-              "summarize":"Summary Of The meeting",
+              "summarize": data.msg,
               "recordLink" :"https://www.demo.com/recording/",
               "fullConversationLink" : "",
               "sentimentAnalysis" : ""
@@ -582,6 +582,7 @@ const fs = require('fs');
     });
 
     socket.on("disconnectUser", async (data) => {
+      console.log('585-->',data);
       const roomID = socketToRoom[socket.id];
       let room = users[roomID];
       if (room) {
@@ -595,7 +596,7 @@ const fs = require('fs');
       }
       //io.sockets.socket(socket.id).disconnect();
       //io.sockets.connected[socket.id].disconnect();
-      socket.to(data.roomID).emit("disconnected",socket.id);
+      socket.to(data.roomId).emit("disconnected",{id: socket.id, role: data.person});
       socket.leave(room);
 
       // Today's code
