@@ -1771,7 +1771,7 @@ function Dashboard() {
                             </div>
                           </div>
                         </div>
-                        {(status === "idle" || status === "permission-requested" || status === "error") && (
+                        {/* {(status === "idle" || status === "permission-requested" || status === "error") && (
                         <button onClick={() => recording()}>
                           Start recording
                         </button>
@@ -1780,7 +1780,7 @@ function Dashboard() {
                         <button onClick={() => stopRecord()}>Stop recording</button>
                         )}
 					              <p id="bloburls">{mediaBlobUrl}</p>
-					              <p id="Samir">Hello World</p>
+					              <p id="Samir">Hello World</p> */}
                       </div>
 
                       <div class="row pt-3 px-3">
