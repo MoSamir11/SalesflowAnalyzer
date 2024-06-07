@@ -35,8 +35,9 @@ import LoginModal from "./login/login-modal.js";
 import { Sidebar } from "./sedebar.js";
 import { Header } from "./common_comp/header.js";
 import ReactPlayer from "react-player";
-import MagicCX from './document/MagicCX.mp4'
+import MagicCX from "./document/MagicCX.mp4";
 // import PDFViewer from "./common_comp/pdf-viewer.js";
+import Charts from "react-apexcharts";
 
 //V-1.11
 //loadModels(); & doContinuousRecognition(); These functions need to be called for SalesPerson
@@ -114,7 +115,7 @@ function Dashboard() {
     "https://magiccx-backend.azurewebsites.net/api/get-speech-token";
   let subscriptionKey = "b728cec31ab14a2da7749569701f599d";
   let openai_subscription_key =
-    "";
+    "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";
   let conversation_history = "";
   let [conversation, setConversation] = useState("");
   const [muted, setMuted] = useState(false);
@@ -134,6 +135,7 @@ function Dashboard() {
   const [clientFE, setClientFE] = useState("");
   const [bolburl, setBlobUrl] = useState("");
   let customerResponse = "";
+  let [customerResp, setCustomerResp] = useState("");
   ////console.log(peers)
   ////console.log(ClientPeers)
 
@@ -143,8 +145,9 @@ function Dashboard() {
   const [userEmail, setUserEmail] = useState(searchParams.get("email"));
   const [chatBoxData, setChatBoxData] = useState([]);
   const [pitchInfo, setPitchInfo] = useState([]);
+  const [summary, setSummary] = useState("");
   let userAudioStream = undefined;
-  let [passedTime, setTimePassed] = useState('00:00:00')
+  let [passedTime, setTimePassed] = useState("00:00:00");
   let expressions = {};
   let transcript = {};
 
@@ -168,12 +171,59 @@ function Dashboard() {
   const [tab, setTab] = useState("tab2");
   const [vibeScore, setVibeScore] = useState("");
   const [aiFeature, setSelectedAIFeature] = useState("pitch");
-  let url ="https://magiccx.azurewebsites.net/";
+  let url = "https://magiccx.azurewebsites.net/";
+  const [selected, setSelected] = useState(false);
+  const [salesPersonLeave, setSalesPersonLeave] = useState(false);
+  const toggle = () => {
+    // if (selected == i) {
+    //   return setSelected(null);
+    // }
+    setSelected(!selected);
+  };
+  const accordianData = [
+    {
+      question: "Question 1",
+      answer:
+        "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
+    },
+    {
+      question: "Question 2",
+      answer:
+        "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
+    },
+  ];
+  const [chartState, setChartState] = useState({
+    options: {
+      colors: ["#D273F2", "#6f42c1"],
+      chart: {
+        id: "basic-bar",
+      },
+      xaxis: {
+        categories: [],
+      },
+    },
+    series: [
+      {
+        name: "Happiness Score",
+        data: [],
+      },
+      {
+        name: "Sentiment Scroe",
+        data: [],
+      },
+    ],
+  });
+  var expression_array = [];
+  var expression_time = [];
+  var sentiment_array = [];
   // let url = "http://localhost:3000/";
   const pdfFiles = [
     { name: "Introduction", path: `${url}document/Introduction.pdf` },
     { name: "Features", path: `${url}document/Features.pdf` },
-    { name: "Summary", path: `${url}document/Summarization and Product Info.pdf` },
+    {
+      name: "Summary",
+      path: `${url}document/Summarization and Product Info.pdf`,
+    },
     { name: "AI Assistant", path: `${url}document/AI Assisted Pitch.pdf` },
     { name: "Vibe Meter", path: `${url}document/The Vibe Meter.pdf` },
   ];
@@ -186,16 +236,14 @@ function Dashboard() {
     //setSpeechSDK(window.SpeechSDK)
   }
 
-  
-
   let region = "eastus";
   var reco;
   let authorizationToken = undefined;
 
   useEffect(() => {
     // //console.log("Hello World");
-    socketRef.current = io.connect("http://localhost:3001");
-    // socketRef.current = io.connect("https://magiccx-backend.azurewebsites.net");
+    // socketRef.current = io.connect("http://localhost:3001");
+    socketRef.current = io.connect("https://magiccx-backend.azurewebsites.net");
     // document.getElementById("speech-container").innerHTML += `
     // <div class="row px-1">
     // 	<div class="col-lg-12 col-md-12 col-sm-12">
@@ -221,21 +269,29 @@ function Dashboard() {
         userVideo.current.srcObject = stream;
         setStream(stream);
         socketRef.current.emit("join room", { roomID, email, person });
+        setRoomID(roomID);
         doContinuousRecognition();
         socketRef.current.on("all users", (users) => {
-          const peers = [];
-          const client_peers = [];
-          const dealer_peers = [];
+          let peers = [];
+          let client_peers = [];
+          let dealer_peers = [];
           users.forEach((obj) => {
             // //console.log(`146--> ${JSON.stringify(obj.audio)}`);
-            const peer = createPeer( obj.id, socketRef.current.id, stream, obj.role);
-            peersRef.current.push({ peerID: obj.id, peer});
+            const peer = createPeer(
+              obj.id,
+              socketRef.current.id,
+              stream,
+              obj.role
+            );
+            peersRef.current.push({ peerID: obj.id, peer });
             if (obj.role == "SalesPerson") {
               peer.on("stream", (stream) => {
                 salespersonVideo.current.srcObject = stream;
                 ////console.log(salespersonVideo)
               });
               setSalespersonSocketId(obj.id);
+              peers = [];
+              setPeers([]);
               peers.push(peer);
               setMuteSalesPerson(!obj.audio);
               callSentimentScore();
@@ -244,6 +300,8 @@ function Dashboard() {
                 clientVideo.current.srcObject = stream;
                 setClientStream(stream);
               });
+              client_peers = [];
+              setClientPeers([]);
               client_peers.push(peer);
               //delay(3000)
               loadModels();
@@ -253,6 +311,8 @@ function Dashboard() {
               peer.on("stream", (stream) => {
                 dealerVideo.current.srcObject = stream;
               });
+              dealer_peers = [];
+              setDealerPeers([]);
               dealer_peers.push(peer);
               setMuteDealer(!obj.audio);
               //delay(3000)
@@ -354,30 +414,17 @@ function Dashboard() {
         // 	track.enabled = true;
         // })
 
-        socketRef.current.on("disconnected",async(data)=>{
-          console.log('363-->',data);
-        if(data.role=="Client"){
-          setClientPeers([]);
-          setClientStream(null);
-        } else if(data.role=="Dealer"){
-          setDealerPeers([]);
-          setDealerStream(null)
-        }
-        // setClientPeers([])
+        socketRef.current.on("disconnected", async (data) => {
+          console.log("363-->", data);
+          if (data.role == "Client") {
+            setClientPeers([]);
+            setClientStream(null);
+          } else if (data.role == "Dealer") {
+            setDealerPeers([]);
+            setDealerStream(null);
+          }
+          // setClientPeers([])
         });
-
-        // socketRef.current.on("user:left",(id)=>{
-        //console.log(`288--> ${id}`);
-        // 	const peerObj = peersRef.current.find(p=>p.peerID === id);
-        //console.log(id, peerObj);
-        // 	if(peerObj){
-        // 		peerObj.peer.destroy();
-        // 		ClientPeers.peer.destroy();
-        // 	}
-        // 	const peers = peersRef.current.filter(p=>p.peerID !== id);
-        // 	peersRef.current = peers;
-        // 	setPeers(peers);
-        // })
 
         socketRef.current.on("disconnect:user", (data) => {
           const peerIdx = findPeer(data.userId);
@@ -401,6 +448,17 @@ function Dashboard() {
         socketRef.current.on("sp-disconnect", (data) => {
           window.location.href = "/";
         });
+
+        socketRef.current.on("leave:room", (data) => {
+          console.log("406-->", data);
+          if (data.role == "Dealer") {
+            setDealerPeers([]);
+            setDealerStream(null);
+          } else if (data.role == "Client") {
+            setClientPeers([]);
+            setClientStream(null);
+          }
+        });
       });
 
     Initialize(async function (speechSdkParam) {
@@ -412,15 +470,15 @@ function Dashboard() {
       }
     });
 
-    var time=0;
-        setInterval(() => {
-          time+=1
-          let hours = String(Math.floor(time/3600)).padStart(2,'0');
-          let minutes = String(Math.floor(time/60)).padStart(2,'0');
-          let sec = String(time%60).padStart(2,'0');
-          $("#timer").text(`${hours}: ${minutes}: ${sec}`);
-          setTimePassed(`${hours}: ${minutes}: ${sec}`)
-        }, 1000);
+    var time = 0;
+    setInterval(() => {
+      time += 1;
+      let hours = String(Math.floor(time / 3600)).padStart(2, "0");
+      let minutes = String(Math.floor(time / 60)).padStart(2, "0");
+      let sec = String(time % 60).padStart(2, "0");
+      $("#timer").text(`${hours}: ${minutes}: ${sec}`);
+      setTimePassed(`${hours}: ${minutes}: ${sec}`);
+    }, 1000);
   }, []);
 
   function callSentimentScore() {
@@ -441,28 +499,36 @@ function Dashboard() {
     });
   }
 
-  const leaveCall = () => {
-    console.log('433-->',customerResponse);
+  const leaveCall = async () => {
+    console.log("452-->", customerResp);
+    console.log("453-->", conversation);
     if (person === "SalesPerson") {
+      setSalesPersonLeave(true);
+      var conversationSummary = await addSummary();
+      if(conversationSummary !== ""){
+      setSalesPersonLeave(false);
+      }
       socketRef.current.emit("salesperson-disconnected", {
         roomID: roomID,
         id: socketRef.current.id,
-        msg: addSummary(),
-        sentiment: customerResponse
+        msg: conversationSummary,
+        sentiment: customerResp,
+        history: conversation,
       });
       window.location.href = "/";
       return;
     }
-    
+
     socketRef.current.emit("disconnectUser", {
       roomId: roomID,
       id: socketRef.current.id,
       msg: conversation,
-      person: person
+      person: person,
     });
-    
+
     window.location.href = "/";
   };
+
 
   const callOpenAI = async () => {
     const openai = new OpenAI({
@@ -498,7 +564,7 @@ function Dashboard() {
         .toUpperCase();
       setPitchInfo((prevState) => [
         { info: text, time: time, type: "Pitching" },
-        ...prevState
+        ...prevState,
       ]);
       // document.getElementById("aiFeatureTab").scrollTop =
       //   document.getElementById("aiFeatureTab").scrollHeight;
@@ -533,20 +599,16 @@ function Dashboard() {
       //console.log(`510--> ${text}`);
       let date = new Date();
       let time = date
-        .toLocaleString([], {
-          hour: "numeric",
-          minute: "2-digit",
-        })
+        .toLocaleString([], { hour: "numeric", minute: "2-digit" })
         .toUpperCase();
+      setSummary(text);
       setPitchInfo((prevState) => [
         { info: text, time: time, type: "Summary" },
-        ...prevState
+        ...prevState,
       ]);
-      return text
-      // document.getElementById("aiFeatureTab").scrollTop =
-      //   document.getElementById("aiFeatureTab").scrollHeight;
+      return text;
     } catch (e) {
-      //console.log(e);
+      console.log("568-->", e);
     }
   };
 
@@ -558,6 +620,7 @@ function Dashboard() {
         minute: "2-digit",
       })
       .toUpperCase();
+    console.log("569-->", time);
     return time;
   }
 
@@ -589,7 +652,7 @@ function Dashboard() {
       { role: "user", content: customerResponse },
     ];
 
-    console.log("543-->", customerResponse);
+    console.log("543 customerResponse-->", customerResponse);
 
     try {
       const chatCompletion = await openai.chat.completions.create({
@@ -621,7 +684,7 @@ function Dashboard() {
 
       // document.getElementById("aibutton").disabled = false;
     } catch (err) {
-      console.error(`575--> ${err}`);
+      // console.error(`575--> ${err}`);
     }
   };
 
@@ -829,7 +892,8 @@ function Dashboard() {
               data.userType
             } : ${data.sentiment} : ${facialExp} : ${data.message}\n`;
             customerResponse += `${data.time}: Speech Expression: ${data.sentiment}\n`;
-            console.log(`783--> ${customerResponse}`);
+            setCustomerResp(customerResponse);
+            // console.log(`783--> ${customerResponse}`);
           } else if (data.userType == "Dealer") {
             conversation_history += `${getCurrentDate()} ${data.time.toUpperCase()} : ${
               data.userType
@@ -905,8 +969,11 @@ function Dashboard() {
       const result = {
         aggregate_sentiment: response[0].confidenceScores,
         overall_sentiment: response[0].sentiment,
-      };
-      //console.log(`579-->2. ${JSON.stringify(result)}`);
+      }; 
+      var userSentiment = result['overall_sentiment'];
+      var userSentimentScore = userSentiment==="neutral"?0:userSentiment==="positive"?100:-100;
+      sentiment_array = [...sentiment_array,userSentimentScore];
+      console.log(`968--> ${userSentimentScore}`);
       return result;
     } catch (e) {
       // //console.log(`579-->3. ${e}`);
@@ -1101,41 +1168,6 @@ function Dashboard() {
               minute: "2-digit",
             })
             .toLowerCase();
-          // document.getElementById(
-          //   "speech-container"
-          // ).innerHTML += `<div class="salesman-speech speech-bubble">
-          // <p style="font-size: 11px; margin-bottom: 0.18rem; font-weight: bold; color: #ffc107">You</p>
-          // 	<p style="font-size: 10px; margin-bottom: 0.1rem">${result.text.replace(
-          //     /(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/,
-          //     "$1$2"
-          //   )}</p>
-          // 	<p style="font-size: 8px; margin-bottom: 0.1rem; text-align: right; padding-left: 15px;">${time}</p>
-          // </div>`;
-          // chatBoxData.push({})
-
-          // document.getElementById("tabs").scrollTop =
-          //   document.getElementById("tabs").scrollHeight;
-          // document.getElementById("tabbbs").scrollTop =
-          //   document.getElementById("tabbbs").scrollHeight;
-
-          ////console.log("Hi")
-          //phraseDiv.value += `${result.text}\r\n`;
-          /*
-					var intentJson = result.properties
-						.getProperty(SpeechSDK.PropertyId.LanguageUnderstandingServiceResponse_JsonResult);
-					if (intentJson) {
-						//phraseDiv.value += `${intentJson}\r\n`;
-					}
-
-					if (result.translations) {
-						var resultJson = JSON.parse(result.json);
-						resultJson['privTranslationPhrase']['Translation']['Translations'].forEach(
-							function (translation) {
-							phraseDiv.value += ` [${translation.Language}] ${translation.Text}\r\n`;
-						});
-					}
-					*/
-
           transcript[new Date().getTime()] = result.text;
           last_speech_recognised_timestamp = new Date().getTime();
           let nweDate = new Date();
@@ -1174,12 +1206,6 @@ function Dashboard() {
             },
             ...prevState,
           ]);
-          // document.getElementById("tabs").scrollTop =
-          //   document.getElementById("tabs").scrollHeight;
-          // document.getElementById("tabbbs").scrollTop =
-          //   document.getElementById("tabbbs").scrollHeight;
-
-          ////console.log(expressions_transcript)
 
           break;
         case SpeechSDK.ResultReason.TranslatedSpeech:
@@ -1265,27 +1291,29 @@ function Dashboard() {
             let ExpressionKeyArray = Object.keys(detections[0].expressions);
             // console.log(detections[0].expressions)
             ExpressionKeyArray.map((obj) => {});
-            console.log(
-              "1230-->",
-              Object.keys(detections[0].expressions).reduce((a, b) =>
-                detections[0].expressions[a] > detections[0].expressions[b]
-                  ? a
-                  : b
-              )
-            );
+            // console.log(
+            //   "1230-->",
+            //   Object.keys(detections[0].expressions).reduce((a, b) =>
+            //     detections[0].expressions[a] > detections[0].expressions[b]
+            //       ? a
+            //       : b
+            //   )
+            // );
             var fExp = Object.keys(detections[0].expressions).reduce((a, b) =>
               detections[0].expressions[a] > detections[0].expressions[b]
                 ? a
                 : b
             );
             customerResponse += `${time} Facial Expression: ${fExp}\n`;
+            setCustomerResp(customerResponse);
+            var maxExp = [];
             ExpressionKeyArray.map((obj) => {
-              //   //console.log("962--> 1.", obj);
+                console.log("962--> ", obj);
               facialExp = obj;
 
               setClientFE(obj);
-              //   //console.log(`962--> 2. ${facialExp}, ${clientFE}`);
-
+              console.log(`962--> 2. ${obj}`);
+              
               if (obj == "happy") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["happy"]) * 100
@@ -1293,6 +1321,11 @@ function Dashboard() {
                 if (expressionNumber == 0) {
                   expressionNumber = 1;
                 }
+                console.log("1247--> happy", expressionNumber);
+                expression_array = [...expression_array, expressionNumber];
+                maxExp.push({sentiment:"happy",score: expressionNumber});
+                
+                
                 var barHtml =
                   '<div class="progress-line"><span style="width: ' +
                   expressionNumber +
@@ -1314,6 +1347,9 @@ function Dashboard() {
                 if (expressionNumber == 0) {
                   expressionNumber = 1;
                 }
+                maxExp.push({sentiment:"sad",score: expressionNumber});
+                console.log("1247--> sad", expressionNumber);
+                // expression_array = [...expression_array,expressionNumber];
                 var barHtml =
                   '<div class="progress-line"><span style="width: ' +
                   expressionNumber +
@@ -1335,6 +1371,9 @@ function Dashboard() {
                 if (expressionNumber == 0) {
                   expressionNumber = 1;
                 }
+                maxExp.push({sentiment:"angry",score: expressionNumber});
+                console.log("1247--> angry", expressionNumber);
+                // expression_array = [...expression_array,expressionNumber];
                 var barHtml =
                   '<div class="progress-line"><span style="width: ' +
                   expressionNumber +
@@ -1356,6 +1395,9 @@ function Dashboard() {
                 if (expressionNumber == 0) {
                   expressionNumber = 1;
                 }
+                maxExp.push({sentiment:"disgusted",score: expressionNumber});
+                console.log("1247--> disgusted", expressionNumber);
+                // expression_array = [...expression_array,expressionNumber];
                 var barHtml =
                   '<div class="progress-line"><span style="width: ' +
                   expressionNumber +
@@ -1377,6 +1419,9 @@ function Dashboard() {
                 if (expressionNumber == 0) {
                   expressionNumber = 1;
                 }
+                maxExp.push({sentiment:"neutral",score: expressionNumber});
+                console.log("1247--> neutral", expressionNumber);
+                // expression_array = [...expression_array,expressionNumber];
                 var barHtml =
                   '<div class="progress-line"><span style="width: ' +
                   expressionNumber +
@@ -1398,6 +1443,7 @@ function Dashboard() {
                 if (expressionNumber == 0) {
                   expressionNumber = 1;
                 }
+                maxExp.push({sentiment:"surprised",score: expressionNumber});
                 var barHtml =
                   '<div class="progress-line"><span style="width: ' +
                   expressionNumber +
@@ -1419,6 +1465,9 @@ function Dashboard() {
                 if (expressionNumber == 0) {
                   expressionNumber = 1;
                 }
+                maxExp.push({sentiment:"fearful",score: expressionNumber});
+                console.log("1247--> fearful", expressionNumber);
+                // expression_array = [...expression_array,expressionNumber];
                 var barHtml =
                   '<div class="progress-line"><span style="width: ' +
                   expressionNumber +
@@ -1435,7 +1484,57 @@ function Dashboard() {
                 // customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               }
             });
-
+            
+            
+            var maximumSentiment = maxExp.reduce((max,current)=>{
+              return current.score > max.score? current: max
+            });
+            if(maximumSentiment['sentiment'] === 'happy'){
+              expression_array = [...expression_array,Math.floor(maximumSentiment['score'])]
+            } else if(maximumSentiment['sentiment']==='content'){
+              expression_array = [...expression_array,50]
+            } else if(maximumSentiment['sentiment']==='surprised'){
+              expression_array = [...expression_array,50]
+            } else if(maximumSentiment['sentiment']==='neutral'){
+              expression_array = [...expression_array,0]
+            } else if(maximumSentiment['sentiment']==='angry'){
+              expression_array = [...expression_array,-100]
+            } else if(maximumSentiment['sentiment']==='fearful'){
+              expression_array = [...expression_array,-100]
+            } else if(maximumSentiment['sentiment']==="sad"){
+              expression_array = [...expression_array,-100]
+            }
+            console.log("1408-->", maxExp,maximumSentiment['score']);
+            expression_time.push(getTime().split(" ")[0]);
+            
+            expression_time=[
+              ...expression_time,
+              getTime().split(" ")[0]
+            ]
+            console.log('1505-->',expression_time, sentiment_array,expression_array);
+             setChartState((prevState) => ({
+                  ...prevState,
+                  options: {
+                    ...prevState.options,
+                    xaxis: {
+                      ...prevState.options.xaxis,
+                      categories: expression_time,
+                    },
+                  },
+                  series: [
+                    {
+                      ...prevState.series[0],
+                      data: expression_array,
+                    },
+                    {
+                      ...prevState.series[1],
+                      data: sentiment_array,
+                    },
+                  ],
+            }));
+            console.log('1524-->',expression_array);
+            maxExp = []
+            
             ////console.log(Object.keys(detections[0].expressions).reduce((a, b) => detections[0].expressions[a] > detections[0].expressions[b] ? a : b))
             //let date = new Date();
             //let showTime = date.getHours() + ':' + date.getMinutes() + ":" + date.getSeconds();
@@ -1479,7 +1578,7 @@ function Dashboard() {
 
                 // conversation_history += '\nCustomer Emotion: '+ Object.keys(detections[0].expressions).reduce((a, b) => detections[0].expressions[a] > detections[0].expressions[b] ? a : b)
 
-                ////console.log(conversation_history)
+                console.log(conversation_history);
               }
             }
           }
@@ -1549,10 +1648,14 @@ function Dashboard() {
     setTimeout(() => {
       var bUrl = document.getElementById("bloburls").innerHTML;
       //console.log("1332-->", bUrl);
-      socketRef.current.emit("upload-meeting", bUrl);
+      // socketRef.current.emit("upload-meeting", bUrl);
     }, 1000);
-    var name = document.getElementById("Samir").innerHTML;
-    //console.log("1332-->", name);
+    var name = document.getElementById("bloburls").innerHTML;
+    console.log("1332-->", name, mediaBlobUrl);
+    const response = await fetch(mediaBlobUrl);
+    const blob = await response.blob();
+    console.log("1579-->", blob);
+    return blob;
   };
 
   function getBlobUrl() {
@@ -1574,56 +1677,10 @@ function Dashboard() {
   async function recording() {
     setIsRecording(true);
     startRecording();
-	// setBlobUrl(mediaBlobUrl)
+    // setBlobUrl(mediaBlobUrl)
   }
 
   return (
-    /*
-	<div>
-            <StyledVideo muted ref={userVideo} autoPlay playsInline />
-			{
-				(person == "SalesPerson") ? 
-				<>
-					<p> ---------------------------------------------------------------------------------------------- </p>
-					<br />
-					<p> Salesmen </p>
-					{peers.map((peer, index) => {
-						return (
-							<Video key={index} peer={peer} />
-						);
-					})}
-					<p> ---------------------------------------------------------------------------------------------- </p>
-					<br />
-					<p> Client </p>
-					{ClientPeers.map((peer, index) => {
-						return (
-							<ClientVideo1 key={index} peer={peer} />
-						);
-					})}
-				</>
-				:
-				<>
-					<p> ---------------------------------------------------------------------------------------------- </p>
-					<br />
-					<p> Salesmen 2 </p>
-					{peers.map((peer, index) => {
-						return (
-							<Video key={index} peer={peer} />
-						);
-					})}
-					<p> ---------------------------------------------------------------------------------------------- </p>
-					<br />
-					<p> Client 2 </p>
-					{ClientPeers.map((peer, index) => {
-						return (
-							<ClientVideo1 key={index} peer={peer} />
-						);
-					})}
-				</>
-			}
-    </div>
-	*/
-
     <>
       {person == "SalesPerson" ? (
         <>
@@ -1633,11 +1690,7 @@ function Dashboard() {
             <div class="main fixed">
               {/* <header id="header" class="header">
                 <nav class="navbar navbar-expand px-2 border-bottom">
-                  <button
-                    class="btn navbar-btn"
-                    type="button"
-                    data-bs-theme="dark"
-                  >
+                  <button class="btn navbar-btn" type="button" data-bs-theme="dark">
                     <span class="navbar-toggler-icon"></span>
                   </button>{" "}
                   &nbsp;
@@ -1678,9 +1731,7 @@ function Dashboard() {
                         <i class="bi bi-chevron-left fw-bold"></i> &nbsp;{" "}
                         <span class="fw-bold">Meeting Details</span>
                       </div>
-                      <div>
-                        <p>Recording Time: {passedTime}</p>
-                      </div>
+                      <div>{/* <p>Recording Time: {passedTime}</p> */}</div>
                       <div class="row pt-4 px-3">
                         <div class="col-lg-9 col-md-12 col-sm-12">
                           <div class="card">
@@ -1689,20 +1740,37 @@ function Dashboard() {
                                 {ClientPeers.map((peer, index) => {
                                   return (
                                     <div key={index} className="client-video-1">
-                                      <video playsInline muted={muteClient} ref={clientVideo} autoPlay></video>
+                                      <video
+                                        playsInline
+                                        muted={muteClient}
+                                        ref={clientVideo}
+                                        autoPlay
+                                      ></video>
                                     </div>
                                   );
                                 })}
                               </div>
                               <div class="profile-overlay-salesman">
                                 {userVideo && (
-                                  <video playsInline muted ref={userVideo} autoPlay loop></video>
+                                  <video
+                                    playsInline
+                                    muted
+                                    ref={userVideo}
+                                    autoPlay
+                                    loop
+                                  ></video>
                                 )}
                               </div>
                               <div class="profile-overlay-salesman-2">
                                 {DealerPeers.map((peer, index) => {
                                   return (
-                                    <video key={index} playsInline muted={muteDealer} ref={dealerVideo} autoPlay></video>
+                                    <video
+                                      key={index}
+                                      playsInline
+                                      muted={muteDealer}
+                                      ref={dealerVideo}
+                                      autoPlay
+                                    ></video>
                                   );
                                 })}
                               </div>
@@ -1713,24 +1781,43 @@ function Dashboard() {
                                   <i class="bi bi-volume-up"></i>
                                 </button> */}
                                 {muted ? (
-                                  <button className="btn control-circle" onClick={() => unmuteMySelf()}>
+                                  <button
+                                    className="btn control-circle"
+                                    onClick={() => unmuteMySelf()}
+                                  >
                                     <i className="bi bi-mic-mute"></i>
                                   </button>
                                 ) : (
-                                  <button className="btn control-circle" onClick={() => muteMySelf()}
+                                  <button
+                                    className="btn control-circle"
+                                    onClick={() => muteMySelf()}
                                   >
                                     <i className="bi bi-mic"></i>
                                   </button>
                                 )}
-                                <button class="btn control-circle-red" onClick={() => leaveCall()}>
-                                  <i class="bi bi-telephone-fill"></i>
+                               <button
+                                  className={`${!salesPersonLeave ? "btn control-circle-red-client": "border-0"}`}
+                                  onClick={() => leaveCall()}
+                                  disabled={salesPersonLeave}
+                                >
+                                  {salesPersonLeave ? <i class="bi bi-telephone-fill"></i> :
+                                  <div className="spinner-border text-danger" role="status">
+                                    <span className="visually-hidden">Loading...</span>
+                                  </div>
+                                  }
                                 </button>
                                 {webCamStatus ? (
-                                  <button className="btn control-circle" onClick={() => toggleVideo()}>
+                                  <button
+                                    className="btn control-circle"
+                                    onClick={() => toggleVideo()}
+                                  >
                                     <i className="bi bi-camera-video"></i>
                                   </button>
                                 ) : (
-                                  <button class="btn control-circle" onClick={() => toggleVideo()}>
+                                  <button
+                                    class="btn control-circle"
+                                    onClick={() => toggleVideo()}
+                                  >
                                     <i className="bi bi-camera-video-off"></i>
                                   </button>
                                 )}
@@ -1741,7 +1828,7 @@ function Dashboard() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div class="col-lg-3 col-md-12 col-sm-12 pb-res">
                           <div class="card vibeMeter">
                             <div class="card-body">
@@ -1784,7 +1871,7 @@ function Dashboard() {
                       </div>
 
                       <div class="row pt-3 px-3">
-                        <div class="col-lg-6 col-md-12 col-sm-12 pb-res">
+                        {/* <div class="col-lg-4 col-md-12 col-sm-12 pb-res">
                           <div class="card chart">
                             <div class="card-body p-4 pt-3">
                               <div class="row chart-res">
@@ -1851,7 +1938,7 @@ function Dashboard() {
                           </div>
                         </div>
 
-                        <div class="col-lg-6 col-md-12 col-sm-12 col-sm-12">
+                        <div class="col-lg-4 col-md-12 col-sm-12 col-sm-12">
                           <div class="card chart">
                             <div class="card-body p-4 pt-3">
                               <div class="row chart-res">
@@ -1880,6 +1967,128 @@ function Dashboard() {
                               </div>
                             </div>
                           </div>
+                        </div> */}
+
+                        <div class="col-lg-12 col-md-12 col-sm-12 col-sm-12">
+                          <div className="wrapper-accordian">
+                            <div className="accordian">
+                             
+                                  <div className="">
+                                    <div className="title" onClick={() => toggle()}>
+                                      <h2>Behaviour Analysis</h2>
+                                      <span style={{fontSize: '2rem'}}>{selected  ? "-" : "+"}</span>
+                                    </div>
+                                    <div className={ selected   ? "content show"   : "content"} style={{display:'flex'}}>
+                                      <div class="col-lg-6 col-md-12 col-sm-12 pb-res">
+                                        <div class="card chart">
+                                          <div class="card-body p-4 pt-3">
+                                            <div class="row chart-res">
+                                              <div class="col-lg-12 col-md-10 col-sm-10 pt-1">
+                                                <span class="sentiment fs-3 fw-bold customer-emo">
+                                                  {" "}
+                                                  Expression Analysis
+                                                </span>
+                                              </div>
+                                            </div>
+
+                                            <div class="skill-bars pt-2">
+                                              <div
+                                                className="bar"
+                                                data-label="Happy"
+                                                data-value="70"
+                                                data-color="#712cf9"
+                                                id="happy"
+                                              ></div>
+                                              <div
+                                                className="bar"
+                                                data-label="Sad"
+                                                data-value="30"
+                                                data-color="#FFA500"
+                                                id="sad"
+                                              ></div>
+                                              <div
+                                                className="bar"
+                                                data-label="Neutral"
+                                                data-value="50"
+                                                data-color="#712cf9"
+                                                id="disgusted"
+                                              ></div>
+                                              <div
+                                                className="bar"
+                                                data-label="Content"
+                                                data-value="25"
+                                                data-color="#FFA500"
+                                                id="neutral"
+                                              ></div>
+                                              <div
+                                                className="bar"
+                                                data-label="Angry"
+                                                data-value="10"
+                                                data-color="#cc1717"
+                                                id="angry"
+                                              ></div>
+                                              <div
+                                                className="bar"
+                                                data-label="Surprised"
+                                                data-value="10"
+                                                data-color="#712cf9"
+                                                id="surprised"
+                                              ></div>
+                                              <div
+                                                className="bar"
+                                                data-label="Fearful"
+                                                data-value="30"
+                                                data-color="#FFA500"
+                                                id="fearful"
+                                              ></div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div class="col-lg-6 col-md-12 col-sm-12 col-sm-12" style={{paddingLeft: '10px'}}>
+                                        <div class="card chart">
+                                          <div class="card-body p-4 pt-3">
+                                            <div class="row chart-res">
+                                              <div class="col-lg-12 col-md-10 col-sm-10 pt-1">
+                                                <span class="sentiment fs-5 fw-bold customer-vibe">
+                                                  Sentiment Analysis
+                                                </span>
+                                              </div>
+                                            </div>
+                                            <div class="chart-res d-flex justify-content-center align-items-center pt-2">
+                                              <canvas
+                                                id="sentiment-chart"
+                                                aria-label="chart"
+                                                height="294"
+                                                width="400"
+                                                data-labels="Positive, Negative, Neutral"
+                                                data-data="20, 40, 22"
+                                                data-bg-color="#b597f0"
+                                                data-point-bg-color="#b597f0"
+                                                data-border-color="black"
+                                                data-border-width="1"
+                                                data-point-radius="2"
+                                                data-line-width="3"
+                                                data-responsive="false"
+                                              ></canvas>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-lg-12 col-md-12 col-sm-12 col-sm-12">
+                        <Charts
+                      options={chartState.options}
+                      series={chartState.series}
+                      type="line"
+                      style={{width: '70%'}}
+                    />
                         </div>
                       </div>
                     </div>
@@ -1921,7 +2130,10 @@ function Dashboard() {
                             <div class="row pt-4 px-4">
                               {pitchInfo.map((data, index) => {
                                 return (
-                                  <div class="col-lg-12 col-md-12 col-sm-12" style={{ paddingBottom: "1.5em" }} key={index}
+                                  <div
+                                    class="col-lg-12 col-md-12 col-sm-12"
+                                    style={{ paddingBottom: "1.5em" }}
+                                    key={index}
                                   >
                                     <div class="d-flex">
                                       <div class="circleBot d-flex justify-content-center align-items-center">
@@ -2387,10 +2599,20 @@ function Dashboard() {
                                             </div>
                                           </div>
                                           <div
-                                            className={data.name == "Client"  ? "chatBox-1 position-relative"  : data.name == "You"  ? "chatBox-2 position-relative"  : "chatBox-3 position-relative"}
+                                            className={
+                                              data.name == "Client"
+                                                ? "chatBox-1 position-relative"
+                                                : data.name == "You"
+                                                ? "chatBox-2 position-relative"
+                                                : "chatBox-3 position-relative"
+                                            }
                                           >
                                             <p class="p-text">{data.msg}</p>
-                                            <div className={getClassName(   data.sentiment )}></div>
+                                            <div
+                                              className={getClassName(
+                                                data.sentiment
+                                              )}
+                                            ></div>
                                           </div>
                                           <br></br>
                                         </div>
@@ -2399,48 +2621,118 @@ function Dashboard() {
                                   </div>
                                 </div>
 
-                                <input type="radio" class="tabs__radio" name="tabs-example" id="tab3" onChange={() => setTab("tab3")} checked={tab === "tab3"}/>
+                                <input
+                                  type="radio"
+                                  class="tabs__radio"
+                                  name="tabs-example"
+                                  id="tab3"
+                                  onChange={() => setTab("tab3")}
+                                  checked={tab === "tab3"}
+                                />
                                 <label for="tab3" class="tabs__label">
                                   <i class="bx bxs-file fs-4"></i>
                                 </label>
-                                <div class="tabs__content tab_1_content p-2" id="aiFeatureTab">
+                                <div
+                                  class="tabs__content tab_1_content p-2"
+                                  id="aiFeatureTab"
+                                >
                                   {pdfFiles.map((data, index) => {
                                     return (
-                                      <div class="col-lg-12 col-md-12 col-sm-12" style={{ paddingBottom: "1.5em" }} key={index}>
-                                    <div class="d-flex">
-                                      <div class="d-flex gap-2 pb-2 align-items-center">
-                                        <span>magic<span style={{   color: "#D273F2",   fontSize: "1rem", }}>CX</span>{" "}</span>
-                                      </div>
-                                    </div>
+                                      <div
+                                        class="col-lg-12 col-md-12 col-sm-12"
+                                        style={{ paddingBottom: "1.5em" }}
+                                        key={index}
+                                      >
+                                        <div class="d-flex">
+                                          <div class="d-flex gap-2 pb-2 align-items-center">
+                                            <span>
+                                              magic
+                                              <span
+                                                style={{
+                                                  color: "#D273F2",
+                                                  fontSize: "1rem",
+                                                }}
+                                              >
+                                                CX
+                                              </span>{" "}
+                                            </span>
+                                          </div>
+                                        </div>
 
-                                    <div class="chatBox">
-                                    <span>Visit here for {data.name}</span>: <a href={data.path} rel="noopener" target="_blank" className="p-text" style={{color: '#006EDF',textDecoration:'underline'}}> {data.name} </a> 
-                                    </div>
-                                  </div>
+                                        <div class="chatBox">
+                                          <span>
+                                            Visit here for {data.name}
+                                          </span>
+                                          :{" "}
+                                          <a
+                                            href={data.path}
+                                            rel="noopener"
+                                            target="_blank"
+                                            className="p-text"
+                                            style={{
+                                              color: "#006EDF",
+                                              textDecoration: "underline",
+                                            }}
+                                          >
+                                            {" "}
+                                            {data.name}{" "}
+                                          </a>
+                                        </div>
+                                      </div>
                                     );
                                   })}
                                 </div>
 
-                                <input type="radio" class="tabs__radio" name="tabs-example" id="tab4" onChange={() => setTab("tab4")} checked={tab === "tab4"}/>
+                                <input
+                                  type="radio"
+                                  class="tabs__radio"
+                                  name="tabs-example"
+                                  id="tab4"
+                                  onChange={() => setTab("tab4")}
+                                  checked={tab === "tab4"}
+                                />
                                 <label for="tab4" class="tabs__label">
                                   <i class="bx bxs-video fs-4"></i>
                                 </label>
-                                <div class="tabs__content tab_1_content p-2" id="aiFeatureTab">
-                                <div class="col-lg-12 col-md-12 col-sm-12" style={{ paddingBottom: "1.5em" }}>
+                                <div
+                                  class="tabs__content tab_1_content p-2"
+                                  id="aiFeatureTab"
+                                >
+                                  <div
+                                    class="col-lg-12 col-md-12 col-sm-12"
+                                    style={{ paddingBottom: "1.5em" }}
+                                  >
                                     <div class="d-flex">
                                       <div class="d-flex gap-2 pb-2 align-items-center">
-                                        <span>magic<span style={{   color: "#D273F2",   fontSize: "1rem", }}>CX</span>{" "}</span>
+                                        <span>
+                                          magic
+                                          <span
+                                            style={{
+                                              color: "#D273F2",
+                                              fontSize: "1rem",
+                                            }}
+                                          >
+                                            CX
+                                          </span>{" "}
+                                        </span>
                                       </div>
                                     </div>
 
-                                    <div class="chatBox" onClick={()=>{
-                                      // <Redire
-                                    }}>
-                                    <ReactPlayer url='/document/MagicCX.mp4' height="20%" width="100%" onClick={()=>{
-                                      window.open("/document/MagicCX.mp4")
-                                    }}
-                                    controls
-                                    />
+                                    <div
+                                      class="chatBox"
+                                      onClick={() => {
+                                        // <Redire
+                                      }}
+                                    >
+                                      <ReactPlayer
+                                        url="/document/MagicCX.mp4"
+                                        height="20%"
+                                        width="100%"
+                                        onClick={() => {
+                                          window.open("/document/MagicCX.mp4");
+                                        }}
+                                        controls
+                                      />
                                     </div>
                                   </div>
                                   {/* <div class="row pt-1 px-3">
@@ -2453,6 +2745,12 @@ function Dashboard() {
                         </div>
                       </div>
                     </div>
+                    {/* <Charts
+                      options={chartState.options}
+                      series={chartState.series}
+                      type="line"
+                      width="450"
+                    /> */}
                   </div>
                 </div>
               </main>
