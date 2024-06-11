@@ -153,6 +153,7 @@ function Dashboard() {
 
   let expressions_transcript = {};
   let last_speech_recognised_timestamp = 0;
+  console.log(chatBoxData,"cccccccccccccccccccc")
 
   const canvasRef = useRef();
 
@@ -171,7 +172,7 @@ function Dashboard() {
   const [tab, setTab] = useState("tab2");
   const [vibeScore, setVibeScore] = useState("");
   const [aiFeature, setSelectedAIFeature] = useState("pitch");
-  let url = "https://magiccx.azurewebsites.net/";
+  // let url = "https://magiccx.azurewebsites.net/";
   const [selected, setSelected] = useState(false);
   const [salesPersonLeave, setSalesPersonLeave] = useState(false);
   const toggle = () => {
@@ -216,7 +217,7 @@ function Dashboard() {
   var expression_array = [];
   var expression_time = [];
   var sentiment_array = [];
-  // let url = "http://localhost:3000/";
+  let url = "http://localhost:3000/";
   const pdfFiles = [
     { name: "Introduction", path: `${url}document/Introduction.pdf` },
     { name: "Features", path: `${url}document/Features.pdf` },
@@ -242,8 +243,8 @@ function Dashboard() {
 
   useEffect(() => {
     // //console.log("Hello World");
-    // socketRef.current = io.connect("http://localhost:3001");
-    socketRef.current = io.connect("https://magiccx-backend.azurewebsites.net");
+    socketRef.current = io.connect("http://localhost:3001");
+    // socketRef.current = io.connect("https://magiccx-backend.azurewebsites.net");
     // document.getElementById("speech-container").innerHTML += `
     // <div class="row px-1">
     // 	<div class="col-lg-12 col-md-12 col-sm-12">
@@ -504,10 +505,10 @@ function Dashboard() {
     console.log("453-->", conversation);
     if (person === "SalesPerson") {
       setSalesPersonLeave(true);
-      var conversationSummary = await addSummary();
-      if(conversationSummary !== ""){
-      setSalesPersonLeave(false);
-      }
+      // var conversationSummary = await addSummary();
+      // if(conversationSummary !== ""){
+      // setSalesPersonLeave(false);
+      // }
       socketRef.current.emit("salesperson-disconnected", {
         roomID: roomID,
         id: socketRef.current.id,
@@ -515,6 +516,7 @@ function Dashboard() {
         sentiment: customerResp,
         history: conversation,
       });
+      setSalesPersonLeave(false);
       window.location.href = "/";
       return;
     }
@@ -881,7 +883,7 @@ function Dashboard() {
           },
         },
       });
-
+      
       ////console.log(socketRef.current)
       if (socketRef.current) {
         //loadModels()
@@ -954,7 +956,7 @@ function Dashboard() {
         });
       }
     }
-  }, [socketRef]);
+  }, []);
 
   const SentimentRecognition = async (inputtext) => {
     const endpoint = "https://ocm-chatbot.cognitiveservices.azure.com/";
@@ -1228,7 +1230,7 @@ function Dashboard() {
             sentiment.overall_sentiment.charAt(0).toUpperCase() +
             sentiment.overall_sentiment.slice(1);
           //console.log("911-->", facialExp);
-          socketRef.current.emit("sendMSG", {
+          await socketRef.current.emit("sendMSG", {
             to: roomID,
             message: result.text,
             time: time,
@@ -1798,13 +1800,15 @@ function Dashboard() {
                                <button
                                   className={`${!salesPersonLeave ? "btn control-circle-red-client": "border-0"}`}
                                   onClick={() => leaveCall()}
+                                  // className="btn control-circle-red-client"
                                   disabled={salesPersonLeave}
                                 >
-                                  {salesPersonLeave ? <i class="bi bi-telephone-fill"></i> :
+                                  {!salesPersonLeave ? <i class="bi bi-telephone-fill"></i> :
                                   <div className="spinner-border text-danger" role="status">
                                     <span className="visually-hidden">Loading...</span>
                                   </div>
                                   }
+                                  {/* <i class="bi bi-telephone-fill"></i>  */}
                                 </button>
                                 {webCamStatus ? (
                                   <button
