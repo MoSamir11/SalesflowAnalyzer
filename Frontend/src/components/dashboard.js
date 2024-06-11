@@ -27,7 +27,6 @@ import { useReactMediaRecorder } from "react-media-recorder";
 import girlImg from "./images/girl.png";
 import video2 from "./images/video-2.mp4";
 import video3 from "./images/video-3.mp4";
-import bulb from "./images/bulb.png";
 import img1 from "./images/image-1.png";
 import { deepOrange, deepPurple } from "@mui/material/colors";
 import Avatar from "react-avatar";
@@ -38,6 +37,12 @@ import ReactPlayer from "react-player";
 import MagicCX from "./document/MagicCX.mp4";
 // import PDFViewer from "./common_comp/pdf-viewer.js";
 import Charts from "react-apexcharts";
+// components import
+import VibeMeter from "./dashboardComp/VibeMeter.js";
+import ExpressionAnalysis from "./dashboardComp/ExpressionAnalysis.js";
+import SentimentAnalysis from "./dashboardComp/SentimentAnalysis.js";
+import ChartComponent from "./dashboardComp/Chart.js";
+import ClientDealerView from "./dashboardComp/ClientDealerView.js";
 
 //V-1.11
 //loadModels(); & doContinuousRecognition(); These functions need to be called for SalesPerson
@@ -115,7 +120,7 @@ function Dashboard() {
     "https://magiccx-backend.azurewebsites.net/api/get-speech-token";
   let subscriptionKey = "b728cec31ab14a2da7749569701f599d";
   let openai_subscription_key =
-    "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";
+    "";
   let conversation_history = "";
   let [conversation, setConversation] = useState("");
   const [muted, setMuted] = useState(false);
@@ -153,7 +158,6 @@ function Dashboard() {
 
   let expressions_transcript = {};
   let last_speech_recognised_timestamp = 0;
-  console.log(chatBoxData,"cccccccccccccccccccc")
 
   const canvasRef = useRef();
 
@@ -173,7 +177,7 @@ function Dashboard() {
   const [vibeScore, setVibeScore] = useState("");
   const [aiFeature, setSelectedAIFeature] = useState("pitch");
   // let url = "https://magiccx.azurewebsites.net/";
-  const [selected, setSelected] = useState(false);
+  const [selected, setSelected] = useState(true);
   const [salesPersonLeave, setSalesPersonLeave] = useState(false);
   const toggle = () => {
     // if (selected == i) {
@@ -193,7 +197,7 @@ function Dashboard() {
         "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
     },
   ];
-  const [chartState, setChartState] = useState({
+  let chartState = {
     options: {
       colors: ["#D273F2", "#6f42c1"],
       chart: {
@@ -205,7 +209,7 @@ function Dashboard() {
     },
     series: [
       {
-        name: "Happiness Score",
+        name: "Expression Score",
         data: [],
       },
       {
@@ -213,7 +217,7 @@ function Dashboard() {
         data: [],
       },
     ],
-  });
+  };
   var expression_array = [];
   var expression_time = [];
   var sentiment_array = [];
@@ -416,7 +420,7 @@ function Dashboard() {
         // })
 
         socketRef.current.on("disconnected", async (data) => {
-          console.log("363-->", data);
+          // console.log("363-->", data);
           if (data.role == "Client") {
             setClientPeers([]);
             setClientStream(null);
@@ -451,7 +455,7 @@ function Dashboard() {
         });
 
         socketRef.current.on("leave:room", (data) => {
-          console.log("406-->", data);
+          // console.log("406-->", data);
           if (data.role == "Dealer") {
             setDealerPeers([]);
             setDealerStream(null);
@@ -501,22 +505,19 @@ function Dashboard() {
   }
 
   const leaveCall = async () => {
-    console.log("452-->", customerResp);
-    console.log("453-->", conversation);
+    // console.log("452-->", customerResp);
+    // console.log("453-->", conversation);
     if (person === "SalesPerson") {
-      setSalesPersonLeave(true);
+      // setSalesPersonLeave(true);
       // var conversationSummary = await addSummary();
-      // if(conversationSummary !== ""){
-      // setSalesPersonLeave(false);
-      // }
+      // console.log("454-->", conversationSummary);
       socketRef.current.emit("salesperson-disconnected", {
         roomID: roomID,
         id: socketRef.current.id,
-        msg: conversationSummary,
+        msg: "", //conversationSummary,
         sentiment: customerResp,
         history: conversation,
       });
-      setSalesPersonLeave(false);
       window.location.href = "/";
       return;
     }
@@ -530,7 +531,6 @@ function Dashboard() {
 
     window.location.href = "/";
   };
-
 
   const callOpenAI = async () => {
     const openai = new OpenAI({
@@ -571,7 +571,7 @@ function Dashboard() {
       // document.getElementById("aiFeatureTab").scrollTop =
       //   document.getElementById("aiFeatureTab").scrollHeight;
     } catch (err) {
-      console.error(err);
+      // console.error(err);
     }
   };
 
@@ -610,7 +610,7 @@ function Dashboard() {
       ]);
       return text;
     } catch (e) {
-      console.log("568-->", e);
+      // console.log("568-->", e);
     }
   };
 
@@ -622,7 +622,7 @@ function Dashboard() {
         minute: "2-digit",
       })
       .toUpperCase();
-    console.log("569-->", time);
+    // console.log("569-->", time);
     return time;
   }
 
@@ -654,17 +654,17 @@ function Dashboard() {
       { role: "user", content: customerResponse },
     ];
 
-    console.log("543 customerResponse-->", customerResponse);
+    // console.log("543 customerResponse-->", customerResponse);
 
     try {
       const chatCompletion = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: messages,
       });
-      console.log("550-->", chatCompletion);
+      // console.log("550-->", chatCompletion);
       const text = chatCompletion.choices[0].message.content;
       //return text;
-      console.log("553-->", text);
+      // console.log("553-->", text);
       var score = text;
       setVibeScore(score);
       // let date = new Date();
@@ -883,78 +883,76 @@ function Dashboard() {
           },
         },
       });
-      
-      ////console.log(socketRef.current)
-      if (socketRef.current) {
-        //loadModels()
-        socketRef.current.on("sendMSGToSalesmen", async (data) => {
-          // //console.log(`471--> ${JSON.stringify(data)}, ${facialExp}`);
-          if (data.userType == "Client") {
-            conversation_history += `${getCurrentDate()} ${data.time.toUpperCase()} : ${
-              data.userType
-            } : ${data.sentiment} : ${facialExp} : ${data.message}\n`;
-            customerResponse += `${data.time}: Speech Expression: ${data.sentiment}\n`;
-            setCustomerResp(customerResponse);
-            // console.log(`783--> ${customerResponse}`);
-          } else if (data.userType == "Dealer") {
-            conversation_history += `${getCurrentDate()} ${data.time.toUpperCase()} : ${
-              data.userType
-            } : ${data.sentiment} : ${data.message}\n`;
+
+      // if (socketRef.current) {
+      //loadModels()
+      socketRef.current.on("sendMSGToSalesmen", async (data) => {
+        if (data.userType == "Client") {
+          conversation_history += `${getCurrentDate()} ${data.time.toUpperCase()} : ${
+            data.userType
+          } : ${data.sentiment} : ${facialExp} : ${data.message}\n`;
+          customerResponse += `${data.time}: Speech Expression: ${data.sentiment}\n`;
+          setCustomerResp(customerResponse);
+          // console.log(`783--> ${customerResponse}`);
+        } else if (data.userType == "Dealer") {
+          conversation_history += `${getCurrentDate()} ${data.time.toUpperCase()} : ${
+            data.userType
+          } : ${data.sentiment} : ${data.message}\n`;
+        }
+        setConversation(conversation_history);
+        // //console.log("588-->", conversation_history);
+        setChatBoxData((prevstate) => [
+          {
+            msg: data.message,
+            time: data.time,
+            sentiment: data.sentiment,
+            img: { girlImg },
+            name: data.userType == "Dealer" ? "Intermediary" : "Customer",
+            email: data.email,
+            class:
+              data.sentiment == "Negative"
+                ? "red-dot"
+                : data.sentiment == "Positive"
+                ? "green-dot"
+                : "",
+          },
+          ...prevstate,
+        ]);
+        // document.getElementById("tabs").scrollTop =
+        //   document.getElementById("tabs").scrollHeight;
+
+        // document.getElementById("tabbbs").scrollTop =
+        //   document.getElementById("tabbbs").scrollHeight;
+
+        const sentimentObj = await SentimentRecognition(data.message);
+        // //console.log(`579--> 557 ${JSON.stringify(sentimentObj)}`);
+        if (sentimentObj) {
+          ////console.log(sentimentObj.aggregate_sentiment)
+          ////console.log(chart)
+          let aggregate_sentiment_obj = sentimentObj.aggregate_sentiment;
+          let positive =
+            aggregate_sentiment_obj.positive > 0
+              ? aggregate_sentiment_obj.positive * 40
+              : Math.floor(Math.random() * (15 - 10 + 1)) + 10;
+          let negative =
+            aggregate_sentiment_obj.negative > 0
+              ? aggregate_sentiment_obj.negative * 40
+              : Math.floor(Math.random() * (15 - 10 + 1)) + 10;
+          let neutral =
+            aggregate_sentiment_obj.neutral > 0
+              ? aggregate_sentiment_obj.neutral * 40
+              : Math.floor(Math.random() * (15 - 10 + 1)) + 10;
+          //let mixed = Math.floor(Math.random() * (15 - 10 + 1)) + 15
+          //let ambiguous = Math.floor(Math.random() * (20 - 15 + 1)) + 10
+
+          ////console.log(positive, negative, neutral, mixed, ambiguous)
+          if (chart) {
+            chart.data.datasets[0].data = [positive, negative, neutral];
+            chart.update();
           }
-          setConversation(conversation_history);
-          // //console.log("588-->", conversation_history);
-          setChatBoxData((prevstate) => [
-            {
-              msg: data.message,
-              time: data.time,
-              sentiment: data.sentiment,
-              img: { girlImg },
-              name: data.userType == "Dealer" ? "Intermediary" : "Customer",
-              email: data.email,
-              class:
-                data.sentiment == "Negative"
-                  ? "red-dot"
-                  : data.sentiment == "Positive"
-                  ? "green-dot"
-                  : "",
-            },
-            ...prevstate,
-          ]);
-          // document.getElementById("tabs").scrollTop =
-          //   document.getElementById("tabs").scrollHeight;
-
-          // document.getElementById("tabbbs").scrollTop =
-          //   document.getElementById("tabbbs").scrollHeight;
-
-          const sentimentObj = await SentimentRecognition(data.message);
-          // //console.log(`579--> 557 ${JSON.stringify(sentimentObj)}`);
-          if (sentimentObj) {
-            ////console.log(sentimentObj.aggregate_sentiment)
-            ////console.log(chart)
-            let aggregate_sentiment_obj = sentimentObj.aggregate_sentiment;
-            let positive =
-              aggregate_sentiment_obj.positive > 0
-                ? aggregate_sentiment_obj.positive * 40
-                : Math.floor(Math.random() * (15 - 10 + 1)) + 10;
-            let negative =
-              aggregate_sentiment_obj.negative > 0
-                ? aggregate_sentiment_obj.negative * 40
-                : Math.floor(Math.random() * (15 - 10 + 1)) + 10;
-            let neutral =
-              aggregate_sentiment_obj.neutral > 0
-                ? aggregate_sentiment_obj.neutral * 40
-                : Math.floor(Math.random() * (15 - 10 + 1)) + 10;
-            //let mixed = Math.floor(Math.random() * (15 - 10 + 1)) + 15
-            //let ambiguous = Math.floor(Math.random() * (20 - 15 + 1)) + 10
-
-            ////console.log(positive, negative, neutral, mixed, ambiguous)
-            if (chart) {
-              chart.data.datasets[0].data = [positive, negative, neutral];
-              chart.update();
-            }
-          }
-        });
-      }
+        }
+      });
+      // }
     }
   }, []);
 
@@ -971,11 +969,58 @@ function Dashboard() {
       const result = {
         aggregate_sentiment: response[0].confidenceScores,
         overall_sentiment: response[0].sentiment,
-      }; 
-      var userSentiment = result['overall_sentiment'];
-      var userSentimentScore = userSentiment==="neutral"?0:userSentiment==="positive"?100:-100;
-      sentiment_array = [...sentiment_array,userSentimentScore];
-      console.log(`968--> ${userSentimentScore}`);
+      };
+      var userSentiment = result["overall_sentiment"];
+      var userSentimentScore =
+        userSentiment === "neutral"
+          ? 0
+          : userSentiment === "positive"
+          ? 100
+          : -100;
+      sentiment_array = [...sentiment_array, userSentimentScore];
+
+      // console.log('971-->',expression_time);
+      // setChartState((prevState) => ({
+      //   ...prevState,
+      //   options: {
+      //     ...prevState.options,
+      //     xaxis: {
+      //       ...prevState.options.xaxis,
+      //       categories: expression_time,
+      //     },
+      //   },
+      //   series: [
+      //     {
+      //       ...prevState.series[0],
+      //       data: expression_array,
+      //     },
+      //     {
+      //       ...prevState.series[1],
+      //       data: sentiment_array,
+      //     },
+      //   ],
+      // }));
+      // console.log(`968--> ${userSentimentScore}`);
+      chartState = {
+        ...chartState,
+        options: {
+          ...chartState.options,
+          xaxis: {
+            ...chartState.options.xaxis,
+            categories: expression_time,
+          },
+        },
+        series: [
+          {
+            name: "Expression Score",
+            data: expression_array,
+          },
+          {
+            name: "Sentiment Score",
+            data: sentiment_array,
+          },
+        ],
+      };
       return result;
     } catch (e) {
       // //console.log(`579-->3. ${e}`);
@@ -1089,44 +1134,48 @@ function Dashboard() {
   }
 
   function applyCommonConfigurationTo(recognizer) {
-    // The 'recognizing' event signals that an intermediate recognition result is received.
-    // Intermediate results arrive while audio is being processed and represent the current "best guess" about
-    // what's been spoken so far.
-    recognizer.recognizing = onRecognizing;
+    try {
+      // The 'recognizing' event signals that an intermediate recognition result is received.
+      // Intermediate results arrive while audio is being processed and represent the current "best guess" about
+      // what's been spoken so far.
+      recognizer.recognizing = onRecognizing;
 
-    // The 'recognized' event signals that a finalized recognition result has been received. These results are
-    // formed across complete utterance audio (with either silence or eof at the end) and will include
-    // punctuation, capitalization, and potentially other extra details.
-    //
-    // * In the case of continuous scenarios, these final results will be generated after each segment of audio
-    //   with sufficient silence at the end.
-    // * In the case of intent scenarios, only these final results will contain intent JSON data.
-    // * Single-shot scenarios can also use a continuation on recognizeOnceAsync calls to handle this without
-    //   event registration.
-    recognizer.recognized = onRecognized;
+      // The 'recognized' event signals that a finalized recognition result has been received. These results are
+      // formed across complete utterance audio (with either silence or eof at the end) and will include
+      // punctuation, capitalization, and potentially other extra details.
+      //
+      // * In the case of continuous scenarios, these final results will be generated after each segment of audio
+      //   with sufficient silence at the end.
+      // * In the case of intent scenarios, only these final results will contain intent JSON data.
+      // * Single-shot scenarios can also use a continuation on recognizeOnceAsync calls to handle this without
+      //   event registration.
+      recognizer.recognized = onRecognized;
 
-    // The 'canceled' event signals that the service has stopped processing speech.
-    // https://docs.microsoft.com/javascript/api/microsoft-cognitiveservices-speech-sdk/speechrecognitioncanceledeventargs?view=azure-node-latest
-    // This can happen for two broad classes of reasons:
-    // 1. An error was encountered.
-    //    In this case, the .errorDetails property will contain a textual representation of the error.
-    // 2. No additional audio is available.
-    //    This is caused by the input stream being closed or reaching the end of an audio file.
-    recognizer.canceled = onCanceled;
+      // The 'canceled' event signals that the service has stopped processing speech.
+      // https://docs.microsoft.com/javascript/api/microsoft-cognitiveservices-speech-sdk/speechrecognitioncanceledeventargs?view=azure-node-latest
+      // This can happen for two broad classes of reasons:
+      // 1. An error was encountered.
+      //    In this case, the .errorDetails property will contain a textual representation of the error.
+      // 2. No additional audio is available.
+      //    This is caused by the input stream being closed or reaching the end of an audio file.
+      recognizer.canceled = onCanceled;
 
-    // The 'sessionStarted' event signals that audio has begun flowing and an interaction with the service has
-    // started.
-    recognizer.sessionStarted = onSessionStarted;
+      // The 'sessionStarted' event signals that audio has begun flowing and an interaction with the service has
+      // started.
+      recognizer.sessionStarted = onSessionStarted;
 
-    // The 'sessionStopped' event signals that the current interaction with the speech service has ended and
-    // audio has stopped flowing.
-    recognizer.sessionStopped = onSessionStopped;
+      // The 'sessionStopped' event signals that the current interaction with the speech service has ended and
+      // audio has stopped flowing.
+      recognizer.sessionStopped = onSessionStopped;
 
-    // PhraseListGrammar allows for the customization of recognizer vocabulary.
-    // The semicolon-delimited list of words or phrases will be treated as additional, more likely components
-    // of recognition results when applied to the recognizer.
-    //
-    // See https://docs.microsoft.com/azure/cognitive-services/speech-service/get-started-speech-to-text#improve-recognition-accuracy
+      // PhraseListGrammar allows for the customization of recognizer vocabulary.
+      // The semicolon-delimited list of words or phrases will be treated as additional, more likely components
+      // of recognition results when applied to the recognizer.
+      //
+      // See https://docs.microsoft.com/azure/cognitive-services/speech-service/get-started-speech-to-text#improve-recognition-accuracy
+    } catch (e) {
+      console.log("Speech Error-->", e);
+    }
   }
 
   function onRecognizing(sender, recognitionEventArgs) {
@@ -1147,102 +1196,106 @@ function Dashboard() {
     ////console.log(result.reason == SpeechSDK.ResultReason.RecognizedSpeech)
     // //console.log(result.text);
     ////console.log(person)
-    if (!result.text) {
-      return;
-    }
-    var sentiment = await SentimentRecognition(result.text);
-    // //console.log(`579--> 780 ${JSON.stringify(sentiment)}, ${result.text}`);
-    ////console.log(person)
-    getSentimentScore();
-    if (person == "SalesPerson") {
-      //phraseDiv.scrollTop = phraseDiv.scrollHeight;
-      //phraseDiv.innerHTML = phraseDiv.innerHTML.replace(/(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/, '$1$2');
+    try {
+      if (!result.text) {
+        return;
+      }
+      var sentiment = await SentimentRecognition(result.text);
+      // //console.log(`579--> 780 ${JSON.stringify(sentiment)}, ${result.text}`);
+      ////console.log(person)
+      getSentimentScore();
+      if (person == "SalesPerson") {
+        //phraseDiv.scrollTop = phraseDiv.scrollHeight;
+        //phraseDiv.innerHTML = phraseDiv.innerHTML.replace(/(.*)(^|[\r\n]+).*\[\.\.\.\][\r\n]+/, '$1$2');
 
-      switch (result.reason) {
-        case SpeechSDK.ResultReason.NoMatch:
-        case SpeechSDK.ResultReason.Canceled:
-        case SpeechSDK.ResultReason.RecognizedSpeech:
-          ////console.log("Salesperson", result.text)
-          let date = new Date();
-          let time = date
-            .toLocaleString([], {
-              hour: "numeric",
-              minute: "2-digit",
-            })
-            .toLowerCase();
-          transcript[new Date().getTime()] = result.text;
-          last_speech_recognised_timestamp = new Date().getTime();
-          let nweDate = new Date();
-          let newTime = nweDate
-            .toLocaleString([], {
-              hour: "numeric",
-              minute: "2-digit",
-            })
-            .toUpperCase();
-          expressions_transcript[new Date().getTime()] = {
-            transcript: result.text,
-          };
-          var sentiment = await SentimentRecognition(result.text);
-          let capitalizedSentiment =
-            sentiment.overall_sentiment.charAt(0).toUpperCase() +
-            sentiment.overall_sentiment.slice(1);
-          conversation_history +=
-            `${getCurrentDate()} ${newTime} : Salesman : ${capitalizedSentiment}` +
-            " : " +
-            result.text +
-            "\n";
-          setChatBoxData((prevState) => [
-            {
-              msg: result.text,
+        switch (result.reason) {
+          case SpeechSDK.ResultReason.NoMatch:
+          case SpeechSDK.ResultReason.Canceled:
+          case SpeechSDK.ResultReason.RecognizedSpeech:
+            ////console.log("Salesperson", result.text)
+            let date = new Date();
+            let time = date
+              .toLocaleString([], {
+                hour: "numeric",
+                minute: "2-digit",
+              })
+              .toLowerCase();
+            transcript[new Date().getTime()] = result.text;
+            last_speech_recognised_timestamp = new Date().getTime();
+            let nweDate = new Date();
+            let newTime = nweDate
+              .toLocaleString([], {
+                hour: "numeric",
+                minute: "2-digit",
+              })
+              .toUpperCase();
+            expressions_transcript[new Date().getTime()] = {
+              transcript: result.text,
+            };
+            var sentiment = await SentimentRecognition(result.text);
+            let capitalizedSentiment =
+              sentiment.overall_sentiment.charAt(0).toUpperCase() +
+              sentiment.overall_sentiment.slice(1);
+            conversation_history +=
+              `${getCurrentDate()} ${newTime} : Salesman : ${capitalizedSentiment}` +
+              " : " +
+              result.text +
+              "\n";
+            setChatBoxData((prevState) => [
+              {
+                msg: result.text,
+                time: time,
+                sentiment: capitalizedSentiment,
+                img: { girlImg },
+                name: "You",
+                email: "",
+                class:
+                  capitalizedSentiment == "Positive"
+                    ? "green-dot"
+                    : capitalizedSentiment == "Negative"
+                    ? "red-dot"
+                    : "",
+              },
+              ...prevState,
+            ]);
+
+            break;
+          case SpeechSDK.ResultReason.TranslatedSpeech:
+          case SpeechSDK.ResultReason.RecognizedIntent:
+        }
+      } else {
+        switch (result.reason) {
+          case SpeechSDK.ResultReason.NoMatch:
+          case SpeechSDK.ResultReason.Canceled:
+          case SpeechSDK.ResultReason.RecognizedSpeech:
+            let date = new Date();
+            let time = date
+              .toLocaleString([], {
+                hour: "numeric",
+                minute: "2-digit",
+                second: "2-digit",
+              })
+              .toLowerCase();
+            let capitalizedSentiment =
+              sentiment.overall_sentiment.charAt(0).toUpperCase() +
+              sentiment.overall_sentiment.slice(1);
+            //console.log("911-->", facialExp);
+            await socketRef.current.emit("sendMSG", {
+              to: roomID,
+              message: result.text,
               time: time,
+              person: person,
               sentiment: capitalizedSentiment,
-              img: { girlImg },
-              name: "You",
-              email: "",
-              class:
-                capitalizedSentiment == "Positive"
-                  ? "green-dot"
-                  : capitalizedSentiment == "Negative"
-                  ? "red-dot"
-                  : "",
-            },
-            ...prevState,
-          ]);
+              email: userEmail,
+            });
 
-          break;
-        case SpeechSDK.ResultReason.TranslatedSpeech:
-        case SpeechSDK.ResultReason.RecognizedIntent:
+            break;
+          case SpeechSDK.ResultReason.TranslatedSpeech:
+          case SpeechSDK.ResultReason.RecognizedIntent:
+        }
       }
-    } else {
-      switch (result.reason) {
-        case SpeechSDK.ResultReason.NoMatch:
-        case SpeechSDK.ResultReason.Canceled:
-        case SpeechSDK.ResultReason.RecognizedSpeech:
-          let date = new Date();
-          let time = date
-            .toLocaleString([], {
-              hour: "numeric",
-              minute: "2-digit",
-              second: "2-digit",
-            })
-            .toLowerCase();
-          let capitalizedSentiment =
-            sentiment.overall_sentiment.charAt(0).toUpperCase() +
-            sentiment.overall_sentiment.slice(1);
-          //console.log("911-->", facialExp);
-          await socketRef.current.emit("sendMSG", {
-            to: roomID,
-            message: result.text,
-            time: time,
-            person: person,
-            sentiment: capitalizedSentiment,
-            email: userEmail,
-          });
-
-          break;
-        case SpeechSDK.ResultReason.TranslatedSpeech:
-        case SpeechSDK.ResultReason.RecognizedIntent:
-      }
+    } catch (e) {
+      console.log("Speech Error-->", e);
     }
   }
 
@@ -1251,7 +1304,7 @@ function Dashboard() {
   function onSessionStopped(sender, sessionEventArgs) {}
 
   function onCanceled(sender, cancellationEventArgs) {
-    window.console.log(cancellationEventArgs);
+    // window.console.log(cancellationEventArgs);
   }
 
   const loadModels = () => {
@@ -1310,12 +1363,12 @@ function Dashboard() {
             setCustomerResp(customerResponse);
             var maxExp = [];
             ExpressionKeyArray.map((obj) => {
-                console.log("962--> ", obj);
+              // console.log("962--> ", obj);
               facialExp = obj;
 
               setClientFE(obj);
-              console.log(`962--> 2. ${obj}`);
-              
+              // console.log(`962--> 2. ${obj}`);
+
               if (obj == "happy") {
                 let expressionNumber = Math.floor(
                   Number(detections[0].expressions["happy"]) * 100
@@ -1323,11 +1376,10 @@ function Dashboard() {
                 if (expressionNumber == 0) {
                   expressionNumber = 1;
                 }
-                console.log("1247--> happy", expressionNumber);
-                expression_array = [...expression_array, expressionNumber];
-                maxExp.push({sentiment:"happy",score: expressionNumber});
-                
-                
+                // console.log("1247--> happy", expressionNumber);
+                // expression_array = [...expression_array, expressionNumber];
+                // maxExp.push({ sentiment: "happy", score: expressionNumber });
+
                 var barHtml =
                   '<div class="progress-line"><span style="width: ' +
                   expressionNumber +
@@ -1349,8 +1401,8 @@ function Dashboard() {
                 if (expressionNumber == 0) {
                   expressionNumber = 1;
                 }
-                maxExp.push({sentiment:"sad",score: expressionNumber});
-                console.log("1247--> sad", expressionNumber);
+                maxExp.push({ sentiment: "sad", score: expressionNumber });
+                // console.log("1247--> sad", expressionNumber);
                 // expression_array = [...expression_array,expressionNumber];
                 var barHtml =
                   '<div class="progress-line"><span style="width: ' +
@@ -1373,8 +1425,8 @@ function Dashboard() {
                 if (expressionNumber == 0) {
                   expressionNumber = 1;
                 }
-                maxExp.push({sentiment:"angry",score: expressionNumber});
-                console.log("1247--> angry", expressionNumber);
+                maxExp.push({ sentiment: "angry", score: expressionNumber });
+                // console.log("1247--> angry", expressionNumber);
                 // expression_array = [...expression_array,expressionNumber];
                 var barHtml =
                   '<div class="progress-line"><span style="width: ' +
@@ -1397,8 +1449,11 @@ function Dashboard() {
                 if (expressionNumber == 0) {
                   expressionNumber = 1;
                 }
-                maxExp.push({sentiment:"disgusted",score: expressionNumber});
-                console.log("1247--> disgusted", expressionNumber);
+                maxExp.push({
+                  sentiment: "disgusted",
+                  score: expressionNumber,
+                });
+                // console.log("1247--> disgusted", expressionNumber);
                 // expression_array = [...expression_array,expressionNumber];
                 var barHtml =
                   '<div class="progress-line"><span style="width: ' +
@@ -1421,8 +1476,8 @@ function Dashboard() {
                 if (expressionNumber == 0) {
                   expressionNumber = 1;
                 }
-                maxExp.push({sentiment:"neutral",score: expressionNumber});
-                console.log("1247--> neutral", expressionNumber);
+                maxExp.push({ sentiment: "neutral", score: expressionNumber });
+                // console.log("1247--> neutral", expressionNumber);
                 // expression_array = [...expression_array,expressionNumber];
                 var barHtml =
                   '<div class="progress-line"><span style="width: ' +
@@ -1445,7 +1500,10 @@ function Dashboard() {
                 if (expressionNumber == 0) {
                   expressionNumber = 1;
                 }
-                maxExp.push({sentiment:"surprised",score: expressionNumber});
+                maxExp.push({
+                  sentiment: "surprised",
+                  score: expressionNumber,
+                });
                 var barHtml =
                   '<div class="progress-line"><span style="width: ' +
                   expressionNumber +
@@ -1467,8 +1525,8 @@ function Dashboard() {
                 if (expressionNumber == 0) {
                   expressionNumber = 1;
                 }
-                maxExp.push({sentiment:"fearful",score: expressionNumber});
-                console.log("1247--> fearful", expressionNumber);
+                maxExp.push({ sentiment: "fearful", score: expressionNumber });
+                // console.log("1247--> fearful", expressionNumber);
                 // expression_array = [...expression_array,expressionNumber];
                 var barHtml =
                   '<div class="progress-line"><span style="width: ' +
@@ -1486,57 +1544,61 @@ function Dashboard() {
                 // customerResponse+= `${time} Facial Expression: ${obj}: ${expressionNumber}\n`
               }
             });
-            
-            
-            var maximumSentiment = maxExp.reduce((max,current)=>{
-              return current.score > max.score? current: max
+
+            var maximumSentiment = maxExp.reduce((max, current) => {
+              return current.score > max.score ? current : max;
             });
-            if(maximumSentiment['sentiment'] === 'happy'){
-              expression_array = [...expression_array,Math.floor(maximumSentiment['score'])]
-            } else if(maximumSentiment['sentiment']==='content'){
-              expression_array = [...expression_array,50]
-            } else if(maximumSentiment['sentiment']==='surprised'){
-              expression_array = [...expression_array,50]
-            } else if(maximumSentiment['sentiment']==='neutral'){
-              expression_array = [...expression_array,0]
-            } else if(maximumSentiment['sentiment']==='angry'){
-              expression_array = [...expression_array,-100]
-            } else if(maximumSentiment['sentiment']==='fearful'){
-              expression_array = [...expression_array,-100]
-            } else if(maximumSentiment['sentiment']==="sad"){
-              expression_array = [...expression_array,-100]
+            if (maximumSentiment["sentiment"] === "happy") {
+              expression_array = [
+                ...expression_array,
+                Math.floor(maximumSentiment["score"]),
+              ];
+            } else if (maximumSentiment["sentiment"] === "content") {
+              expression_array = [...expression_array, 50];
+            } else if (maximumSentiment["sentiment"] === "surprised") {
+              expression_array = [...expression_array, 50];
+            } else if (maximumSentiment["sentiment"] === "neutral") {
+              expression_array = [...expression_array, 0];
+            } else if (maximumSentiment["sentiment"] === "angry") {
+              expression_array = [...expression_array, -100];
+            } else if (maximumSentiment["sentiment"] === "fearful") {
+              expression_array = [...expression_array, -100];
+            } else if (maximumSentiment["sentiment"] === "sad") {
+              expression_array = [...expression_array, -100];
             }
-            console.log("1408-->", maxExp,maximumSentiment['score']);
-            expression_time.push(getTime().split(" ")[0]);
-            
-            expression_time=[
-              ...expression_time,
-              getTime().split(" ")[0]
-            ]
-            console.log('1505-->',expression_time, sentiment_array,expression_array);
-             setChartState((prevState) => ({
-                  ...prevState,
-                  options: {
-                    ...prevState.options,
-                    xaxis: {
-                      ...prevState.options.xaxis,
-                      categories: expression_time,
-                    },
-                  },
-                  series: [
-                    {
-                      ...prevState.series[0],
-                      data: expression_array,
-                    },
-                    {
-                      ...prevState.series[1],
-                      data: sentiment_array,
-                    },
-                  ],
-            }));
-            console.log('1524-->',expression_array);
-            maxExp = []
-            
+            // console.log("1408-->", maxExp,maximumSentiment['score']);
+            // expression_time.push(getTime().split(" ")[0]);
+
+            // expression_time = [...expression_time, getTime().split(" ")[0]];
+            // console.log(
+            //   "1505-->",
+            //   expression_time,
+            //   sentiment_array,
+            //   expression_array
+            // );
+            // setChartState((prevState) => ({
+            //   ...prevState,
+            //   options: {
+            //     ...prevState.options,
+            //     xaxis: {
+            //       ...prevState.options.xaxis,
+            //       categories: expression_time,
+            //     },
+            //   },
+            //   series: [
+            //     {
+            //       ...prevState.series[0],
+            //       data: expression_array,
+            //     },
+            //     {
+            //       ...prevState.series[1],
+            //       data: sentiment_array,
+            //     },
+            //   ],
+            // }));
+            // console.log('1524-->',expression_array);
+            maxExp = [];
+
             ////console.log(Object.keys(detections[0].expressions).reduce((a, b) => detections[0].expressions[a] > detections[0].expressions[b] ? a : b))
             //let date = new Date();
             //let showTime = date.getHours() + ':' + date.getMinutes() + ":" + date.getSeconds();
@@ -1580,7 +1642,7 @@ function Dashboard() {
 
                 // conversation_history += '\nCustomer Emotion: '+ Object.keys(detections[0].expressions).reduce((a, b) => detections[0].expressions[a] > detections[0].expressions[b] ? a : b)
 
-                console.log(conversation_history);
+                // console.log(conversation_history);
               }
             }
           }
@@ -1653,10 +1715,10 @@ function Dashboard() {
       // socketRef.current.emit("upload-meeting", bUrl);
     }, 1000);
     var name = document.getElementById("bloburls").innerHTML;
-    console.log("1332-->", name, mediaBlobUrl);
+    // console.log("1332-->", name, mediaBlobUrl);
     const response = await fetch(mediaBlobUrl);
     const blob = await response.blob();
-    console.log("1579-->", blob);
+    // console.log("1579-->", blob);
     return blob;
   };
 
@@ -1686,14 +1748,14 @@ function Dashboard() {
     <>
       {person == "SalesPerson" ? (
         <>
-          <div class="wrapper">
+          <div className="wrapper">
             <Sidebar />
 
-            <div class="main fixed">
-              {/* <header id="header" class="header">
-                <nav class="navbar navbar-expand px-2 border-bottom">
-                  <button class="btn navbar-btn" type="button" data-bs-theme="dark">
-                    <span class="navbar-toggler-icon"></span>
+            <div className="main fixed">
+              {/* <header id="header" className="header">
+                <nav className="navbar navbar-expand px-2 border-bottom">
+                  <button className="btn navbar-btn" type="button" data-bs-theme="dark">
+                    <span className="navbar-toggler-icon"></span>
                   </button>{" "}
                   &nbsp;
                   <div className="index-logo p-2">
@@ -1701,14 +1763,14 @@ function Dashboard() {
                 magic<span>CX</span>
               </a>
             </div>
-                  <div class="w-100"></div>
-                  <a class="navbar-text mx-3" href="#">
-                    <i class="bi bi-gear fs-5"></i>
+                  <div className="w-100"></div>
+                  <a className="navbar-text mx-3" href="#">
+                    <i className="bi bi-gear fs-5"></i>
                   </a>
-                  <a class="navbar-text mx-3 pr-1 position-relative" href="#">
-                    <i class="bi bi-bell fs-5 position-relative">
+                  <a className="navbar-text mx-3 pr-1 position-relative" href="#">
+                    <i className="bi bi-bell fs-5 position-relative">
                       <span
-                        class="badge bg-danger rounded-circle position-absolute top-0 end-0 translate-middle"
+                        className="badge bg-danger rounded-circle position-absolute top-0 end-0 translate-middle"
                         style={{
                           width: "10px",
                           height: "10px",
@@ -1717,28 +1779,23 @@ function Dashboard() {
                       ></span>
                     </i>
                   </a>
-                  <div class="navbar-profile mx-2">
-                    <div class="profile-img">
+                  <div className="navbar-profile mx-2">
+                    <div className="profile-img">
                       <span role="button">WK</span>
                     </div>
                   </div>
                 </nav>
               </header> */}
               <Header />
-              <main class="content-salesman px-2 py-2">
-                <div class="container-fluid">
-                  <div class="row pt-3">
-                    <div class="col-lg-8 col-md-6 col-sm-6  px-4">
-                      <div>
-                        <i class="bi bi-chevron-left fw-bold"></i> &nbsp;{" "}
-                        <span class="fw-bold">Meeting Details</span>
-                      </div>
-                      <div>{/* <p>Recording Time: {passedTime}</p> */}</div>
-                      <div class="row pt-4 px-3">
-                        <div class="col-lg-9 col-md-12 col-sm-12">
-                          <div class="card">
-                            <div class="salesman-video-container">
-                              <div class="salesman-video">
+              <main className="content-salesman">
+                <div className="container-fluid">
+                  <div className="row pt-2">
+                    <div className="col-lg-8 col-md-6 col-sm-6">
+                      <div className="row px-3">
+                        <div className="col-lg-9 col-md-12 col-sm-12">
+                          <div className="card">
+                            <div className="salesman-video-container">
+                              <div className="salesman-video">
                                 {ClientPeers.map((peer, index) => {
                                   return (
                                     <div key={index} className="client-video-1">
@@ -1752,7 +1809,7 @@ function Dashboard() {
                                   );
                                 })}
                               </div>
-                              <div class="profile-overlay-salesman">
+                              <div className="profile-overlay-salesman">
                                 {userVideo && (
                                   <video
                                     playsInline
@@ -1763,7 +1820,7 @@ function Dashboard() {
                                   ></video>
                                 )}
                               </div>
-                              <div class="profile-overlay-salesman-2">
+                              <div className="profile-overlay-salesman-2">
                                 {DealerPeers.map((peer, index) => {
                                   return (
                                     <video
@@ -1777,11 +1834,8 @@ function Dashboard() {
                                 })}
                               </div>
                             </div>
-                            <div class="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
-                              <div class="controls">
-                                {/* <button class="btn control-circle">
-                                  <i class="bi bi-volume-up"></i>
-                                </button> */}
+                            <div className="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
+                              <div className="controls">
                                 {muted ? (
                                   <button
                                     className="btn control-circle"
@@ -1797,17 +1851,27 @@ function Dashboard() {
                                     <i className="bi bi-mic"></i>
                                   </button>
                                 )}
-                               <button
-                                  className={`${!salesPersonLeave ? "btn control-circle-red-client": "border-0"}`}
+                                <button
+                                  className={`${
+                                    !salesPersonLeave
+                                      ? "btn control-circle-red-client"
+                                      : "border-0"
+                                  }`}
                                   onClick={() => leaveCall()}
-                                  // className="btn control-circle-red-client"
                                   disabled={salesPersonLeave}
                                 >
-                                  {!salesPersonLeave ? <i class="bi bi-telephone-fill"></i> :
-                                  <div className="spinner-border text-danger" role="status">
-                                    <span className="visually-hidden">Loading...</span>
-                                  </div>
-                                  }
+                                  {!salesPersonLeave ? (
+                                    <i class="bi bi-telephone-fill"></i>
+                                  ) : (
+                                    <div
+                                      className="spinner-border text-danger"
+                                      role="status"
+                                    >
+                                      <span className="visually-hidden">
+                                        Loading...
+                                      </span>
+                                    </div>
+                                  )}
                                   {/* <i class="bi bi-telephone-fill"></i>  */}
                                 </button>
                                 {webCamStatus ? (
@@ -1819,48 +1883,22 @@ function Dashboard() {
                                   </button>
                                 ) : (
                                   <button
-                                    class="btn control-circle"
+                                    className="btn control-circle"
                                     onClick={() => toggleVideo()}
                                   >
                                     <i className="bi bi-camera-video-off"></i>
                                   </button>
                                 )}
-                                {/* <button class="btn control-circle">
-                                  <i class="bi bi-people"></i>
+                                {/* <button className="btn control-circle">
+                                  <i className="bi bi-people"></i>
                                 </button> */}
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        <div class="col-lg-3 col-md-12 col-sm-12 pb-res">
-                          <div class="card vibeMeter">
-                            <div class="card-body">
-                              <div class="row chart-res text-center justify-content-center">
-                                <div class="col-lg-12 col-md-10 col-sm-10">
-                                  <span class="sentiment fs-5 fw-bolder vibeMeter-t">
-                                    The Vibe Meter
-                                  </span>
-                                </div>
-                                <div>
-                                  <span class="vibe-t fs-6 text-nowrap p-0">
-                                    Your Customer's Mood So Far
-                                  </span>
-                                </div>
-                                <div class="vibe-img mt-3">
-                                  <img src={bulb} />
-                                </div>
-                                <div class="mt-4">
-                                  <button
-                                    type="button"
-                                    class="btn btn-sm btn-white w-100 fw-bold"
-                                  >
-                                    Vibe Score: {vibeScore}
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                        <div className="col-lg-3 col-md-12 col-sm-12 pb-res">
+                          <VibeMeter vibeScore={vibeScore} />
                         </div>
                         {/* {(status === "idle" || status === "permission-requested" || status === "error") && (
                         <button onClick={() => recording()}>
@@ -1874,20 +1912,20 @@ function Dashboard() {
 					              <p id="Samir">Hello World</p> */}
                       </div>
 
-                      <div class="row pt-3 px-3">
-                        {/* <div class="col-lg-4 col-md-12 col-sm-12 pb-res">
-                          <div class="card chart">
-                            <div class="card-body p-4 pt-3">
-                              <div class="row chart-res">
-                                <div class="col-lg-12 col-md-10 col-sm-10 pt-1">
-                                  <span class="sentiment fs-3 fw-bold customer-emo">
+                      <div className="row px-3">
+                        {/* <div className="col-lg-4 col-md-12 col-sm-12 pb-res">
+                          <div className="card chart">
+                            <div className="card-body p-4 pt-3">
+                              <div className="row chart-res">
+                                <div className="col-lg-12 col-md-10 col-sm-10 pt-1">
+                                  <span className="sentiment fs-3 fw-bold customer-emo">
                                     {" "}
                                     Expression Analysis
                                   </span>
                                 </div>
                               </div>
 
-                              <div class="skill-bars pt-2">
+                              <div className="skill-bars pt-2">
                                 <div
                                   className="bar"
                                   data-label="Happy"
@@ -1942,17 +1980,17 @@ function Dashboard() {
                           </div>
                         </div>
 
-                        <div class="col-lg-4 col-md-12 col-sm-12 col-sm-12">
-                          <div class="card chart">
-                            <div class="card-body p-4 pt-3">
-                              <div class="row chart-res">
-                                <div class="col-lg-12 col-md-10 col-sm-10 pt-1">
-                                  <span class="sentiment fs-5 fw-bold customer-vibe">
+                        <div className="col-lg-4 col-md-12 col-sm-12 col-sm-12">
+                          <div className="card chart">
+                            <div className="card-body p-4 pt-3">
+                              <div className="row chart-res">
+                                <div className="col-lg-12 col-md-10 col-sm-10 pt-1">
+                                  <span className="sentiment fs-5 fw-bold customer-vibe">
                                     Sentiment Analysis
                                   </span>
                                 </div>
                               </div>
-                              <div class="chart-res d-flex justify-content-center align-items-center pt-2">
+                              <div className="chart-res d-flex justify-content-center align-items-center pt-2">
                                 <canvas
                                   id="sentiment-chart"
                                   aria-label="chart"
@@ -1973,177 +2011,93 @@ function Dashboard() {
                           </div>
                         </div> */}
 
-                        <div class="col-lg-12 col-md-12 col-sm-12 col-sm-12">
+                        <div className="col-lg-12 col-md-12 col-sm-12 col-sm-12">
                           <div className="wrapper-accordian">
                             <div className="accordian">
-                             
-                                  <div className="">
-                                    <div className="title" onClick={() => toggle()}>
-                                      <h2>Behaviour Analysis</h2>
-                                      <span style={{fontSize: '2rem'}}>{selected  ? "-" : "+"}</span>
-                                    </div>
-                                    <div className={ selected   ? "content show"   : "content"} style={{display:'flex'}}>
-                                      <div class="col-lg-6 col-md-12 col-sm-12 pb-res">
-                                        <div class="card chart">
-                                          <div class="card-body p-4 pt-3">
-                                            <div class="row chart-res">
-                                              <div class="col-lg-12 col-md-10 col-sm-10 pt-1">
-                                                <span class="sentiment fs-3 fw-bold customer-emo">
-                                                  {" "}
-                                                  Expression Analysis
-                                                </span>
-                                              </div>
-                                            </div>
-
-                                            <div class="skill-bars pt-2">
-                                              <div
-                                                className="bar"
-                                                data-label="Happy"
-                                                data-value="70"
-                                                data-color="#712cf9"
-                                                id="happy"
-                                              ></div>
-                                              <div
-                                                className="bar"
-                                                data-label="Sad"
-                                                data-value="30"
-                                                data-color="#FFA500"
-                                                id="sad"
-                                              ></div>
-                                              <div
-                                                className="bar"
-                                                data-label="Neutral"
-                                                data-value="50"
-                                                data-color="#712cf9"
-                                                id="disgusted"
-                                              ></div>
-                                              <div
-                                                className="bar"
-                                                data-label="Content"
-                                                data-value="25"
-                                                data-color="#FFA500"
-                                                id="neutral"
-                                              ></div>
-                                              <div
-                                                className="bar"
-                                                data-label="Angry"
-                                                data-value="10"
-                                                data-color="#cc1717"
-                                                id="angry"
-                                              ></div>
-                                              <div
-                                                className="bar"
-                                                data-label="Surprised"
-                                                data-value="10"
-                                                data-color="#712cf9"
-                                                id="surprised"
-                                              ></div>
-                                              <div
-                                                className="bar"
-                                                data-label="Fearful"
-                                                data-value="30"
-                                                data-color="#FFA500"
-                                                id="fearful"
-                                              ></div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      <div class="col-lg-6 col-md-12 col-sm-12 col-sm-12" style={{paddingLeft: '10px'}}>
-                                        <div class="card chart">
-                                          <div class="card-body p-4 pt-3">
-                                            <div class="row chart-res">
-                                              <div class="col-lg-12 col-md-10 col-sm-10 pt-1">
-                                                <span class="sentiment fs-5 fw-bold customer-vibe">
-                                                  Sentiment Analysis
-                                                </span>
-                                              </div>
-                                            </div>
-                                            <div class="chart-res d-flex justify-content-center align-items-center pt-2">
-                                              <canvas
-                                                id="sentiment-chart"
-                                                aria-label="chart"
-                                                height="294"
-                                                width="400"
-                                                data-labels="Positive, Negative, Neutral"
-                                                data-data="20, 40, 22"
-                                                data-bg-color="#b597f0"
-                                                data-point-bg-color="#b597f0"
-                                                data-border-color="black"
-                                                data-border-width="1"
-                                                data-point-radius="2"
-                                                data-line-width="3"
-                                                data-responsive="false"
-                                              ></canvas>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
+                              <div className="">
+                                <div className="title" onClick={() => toggle()}>
+                                  <p></p>
+                                  <span style={{ fontSize: "1rem" }}>
+                                    {selected ? "-" : "+"}
+                                  </span>
+                                </div>
+                                <div
+                                  className={
+                                    selected ? "content show" : "content"
+                                  }
+                                  style={{ display: "flex" }}
+                                >
+                                  <div className="col-lg-6 col-md-12 col-sm-12 pb-res">
+                                    <ExpressionAnalysis />
                                   </div>
-                                
+
+                                  <div
+                                    className="col-lg-6 col-md-12 col-sm-12 col-sm-12"
+                                    style={{ paddingLeft: "10px" }}
+                                  >
+                                    <SentimentAnalysis />
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
-                        <div class="col-lg-12 col-md-12 col-sm-12 col-sm-12">
-                        <Charts
-                      options={chartState.options}
-                      series={chartState.series}
-                      type="line"
-                      style={{width: '70%'}}
-                    />
+                        <div className="wrapper-accordian">
+                          <ChartComponent
+                            chartState={chartState}
+                            selected={selected}
+                          />
                         </div>
                       </div>
                     </div>
 
                     <div
-                      class="modal fade"
+                      className="modal fade"
                       id="tab1ModalLabel"
-                      tabindex="-1"
+                      tabIndex="-1"
                       aria-labelledby="tab1ModalLabel"
                       aria-hidden="true"
                     >
-                      <div class="modal-dialog modal-fullscreen modal-dialog-centered modal-dialog-scrollable">
-                        <div class="modal-content">
-                          <div class="modal-header px-4">
+                      <div className="modal-dialog modal-fullscreen modal-dialog-centered modal-dialog-scrollable">
+                        <div className="modal-content">
+                          <div className="modal-header px-4">
                             <button
                               type="button"
-                              class="btn-close"
+                              className="btn-close"
                               data-bs-dismiss="modal"
                               aria-label="Close"
                             ></button>
                           </div>
-                          <div class="modal-body">
-                            <div class="px-4">
+                          <div className="modal-body">
+                            <div className="px-4">
                               <button
                                 type="button"
-                                class="btn btn-dark btn-sm p-2"
+                                className="btn btn-dark btn-sm p-2"
                               >
                                 <div
-                                  class="d-flex justify-content-center align-items-center"
+                                  className="d-flex justify-content-center align-items-center"
                                   onClick={() => callOpenAI()}
                                 >
-                                  <div class="circle d-flex justify-content-center align-items-center">
-                                    <i class="bx bx-microphone"></i>
+                                  <div className="circle d-flex justify-content-center align-items-center">
+                                    <i className="bx bx-microphone"></i>
                                   </div>
-                                  <span class="text">Help Me Pitch!</span>
+                                  <span className="text">Help Me Pitch!</span>
                                 </div>
                               </button>
                             </div>
-                            <div class="row pt-4 px-4">
+                            <div className="row pt-4 px-4">
                               {pitchInfo.map((data, index) => {
                                 return (
                                   <div
-                                    class="col-lg-12 col-md-12 col-sm-12"
+                                    className="col-lg-12 col-md-12 col-sm-12"
                                     style={{ paddingBottom: "1.5em" }}
                                     key={index}
                                   >
-                                    <div class="d-flex">
-                                      <div class="circleBot d-flex justify-content-center align-items-center">
-                                        <i class="bi bi-patch-question"></i>
+                                    <div className="d-flex">
+                                      <div className="circleBot d-flex justify-content-center align-items-center">
+                                        <i className="bi bi-patch-question"></i>
                                       </div>
-                                      <div class="d-flex gap-2 pb-2 align-items-center">
+                                      <div className="d-flex gap-2 pb-2 align-items-center">
                                         <span>
                                           magic
                                           <span
@@ -2154,15 +2108,15 @@ function Dashboard() {
                                           >
                                             CX
                                           </span>{" "}
-                                          <span class="timeBotText">
+                                          <span className="timeBotText">
                                             {data.time} <span>{data.type}</span>
                                           </span>
                                         </span>
                                       </div>
                                     </div>
 
-                                    <div class="chatBox">
-                                      <p class="p-text">{data.info}</p>
+                                    <div className="chatBox">
+                                      <p className="p-text">{data.info}</p>
                                     </div>
                                   </div>
                                 );
@@ -2173,47 +2127,47 @@ function Dashboard() {
                       </div>
                     </div>
                     <div
-                      class="modal fade"
+                      className="modal fade"
                       id="tab2ModalLabel"
-                      tabindex="-1"
+                      tabIndex="-1"
                       aria-labelledby="tab2ModalLabel"
                       aria-hidden="true"
                     >
-                      <div class="modal-dialog modal-fullscreen modal-dialog-centered modal-dialog-scrollable">
-                        <div class="modal-content">
-                          <div class="modal-header px-4">
+                      <div className="modal-dialog modal-fullscreen modal-dialog-centered modal-dialog-scrollable">
+                        <div className="modal-content">
+                          <div className="modal-header px-4">
                             <button
                               type="button"
-                              class="btn-close"
+                              className="btn-close"
                               data-bs-dismiss="modal"
                               aria-label="Close"
                             ></button>
                           </div>
-                          <div class="modal-body px-5" id="tabbbs">
-                            <div class="row px-1">
-                              <div class="col-lg-12 col-md-12 col-sm-12">
+                          <div className="modal-body px-5" id="tabbbs">
+                            <div className="row px-1">
+                              <div className="col-lg-12 col-md-12 col-sm-12">
                                 {chatBoxData.map((data, index) => {
                                   return (
                                     <div
-                                      class="col-lg-12 col-md-12 col-sm-12"
+                                      className="col-lg-12 col-md-12 col-sm-12"
                                       key={index}
                                     >
                                       <div
-                                        class={
+                                        className={
                                           data.name == "You"
                                             ? "d-flex justify-content-end position-relative"
                                             : "d-flex align-items-center"
                                         }
                                       >
-                                        <div class="circleBotImg d-flex justify-content-center align-items-center">
-                                          {/* <div class="profile-img1">
+                                        <div className="circleBotImg d-flex justify-content-center align-items-center">
+                                          {/* <div className="profile-img1">
                                             <span role="button"> */}
 
                                           {/* </span>
 								                          </div> */}
                                         </div>
-                                        <div class="d-flex gap-2 pb-2 align-items-center">
-                                          <span class="textBot">
+                                        <div className="d-flex gap-2 pb-2 align-items-center">
+                                          <span className="textBot">
                                             <Avatar
                                               name={
                                                 data.name == "You"
@@ -2225,11 +2179,11 @@ function Dashboard() {
                                             />{" "}
                                             {data.name}
                                           </span>
-                                          <span class="timeBotText">
+                                          <span className="timeBotText">
                                             {data.time}
                                           </span>
                                           <br />
-                                          <span class="timeBotText">
+                                          <span className="timeBotText">
                                             {data.email}
                                           </span>
                                         </div>
@@ -2243,7 +2197,7 @@ function Dashboard() {
                                             : "chatBox-3 position-relative"
                                         }
                                       >
-                                        <p class="p-text">{data.msg}</p>
+                                        <p className="p-text">{data.msg}</p>
                                         <div
                                           className={getClassName(
                                             data.sentiment
@@ -2261,28 +2215,28 @@ function Dashboard() {
                       </div>
                     </div>
 
-                    <div class="col-lg-4 col-md-6 col-sm-6">
-                      <div class="row h-100">
-                        <div class="col-lg-12 col-md-12 col-sm-12 pb-res">
-                          <div class="card genAi h-100">
-                            <div class="card-body p-0">
-                              <div class="tabs">
+                    <div className="col-lg-4 col-md-6 col-sm-6">
+                      <div className="row h-100">
+                        <div className="col-lg-12 col-md-12 col-sm-12 pb-res">
+                          <div className="card genAi h-100">
+                            <div className="card-body p-0">
+                              <div className="tabs">
                                 <input
                                   type="radio"
-                                  class="tabs__radio"
+                                  className="tabs__radio"
                                   name="tabs-example"
                                   id="tab1"
                                   onChange={() => setTab("tab1")}
                                   checked={tab === "tab1"}
                                 />
-                                <label for="tab1" class="tabs__label">
-                                  <i class="bx bxs-brain fs-4"></i>
+                                <label htmlFor="tab1" className="tabs__label">
+                                  <i className="bx bxs-brain fs-4"></i>
                                 </label>
                                 <div
-                                  class="tabs__content tab_1_content p-2"
+                                  className="tabs__content tab_1_content p-2"
                                   id="aiFeatureTab"
                                 >
-                                  <div class="d-flex pt-2 tab-1-buttons">
+                                  <div className="d-flex pt-2 tab-1-buttons">
                                     <button
                                       type="button"
                                       onClick={() =>
@@ -2295,13 +2249,15 @@ function Dashboard() {
                                       }
                                     >
                                       <div
-                                        class="d-flex justify-content-center align-items-center"
+                                        className="d-flex justify-content-center align-items-center"
                                         onClick={() => callOpenAI()}
                                       >
-                                        <div class="circle d-flex justify-content-center align-items-center">
-                                          <i class="bx bx-microphone"></i>
+                                        <div className="circle d-flex justify-content-center align-items-center">
+                                          <i className="bx bx-microphone"></i>
                                         </div>
-                                        <span class="text">Help Me Pitch!</span>
+                                        <span className="text">
+                                          Help Me Pitch!
+                                        </span>
                                       </div>
                                     </button>
                                     <button
@@ -2316,13 +2272,13 @@ function Dashboard() {
                                       }
                                     >
                                       <div
-                                        class="d-flex justify-content-center align-items-center"
+                                        className="d-flex justify-content-center align-items-center"
                                         onClick={() => addSummary()}
                                       >
-                                        <div class="circle2 d-flex justify-content-center align-items-center">
-                                          <i class="bx bxs-file"></i>
+                                        <div className="circle2 d-flex justify-content-center align-items-center">
+                                          <i className="bx bxs-file"></i>
                                         </div>
-                                        <span class="text">Summarize</span>
+                                        <span className="text">Summarize</span>
                                       </div>
                                     </button>
                                     <button
@@ -2337,23 +2293,25 @@ function Dashboard() {
                                       }
                                     >
                                       <div
-                                        class="d-flex justify-content-center align-items-center"
+                                        className="d-flex justify-content-center align-items-center"
                                         onClick={() => addProductInfo()}
                                       >
-                                        <div class="circle3 d-flex justify-content-center align-items-center">
-                                          <i class="bx bxs-detail"></i>
+                                        <div className="circle3 d-flex justify-content-center align-items-center">
+                                          <i className="bx bxs-detail"></i>
                                         </div>
-                                        <span class="text">Product Info</span>
+                                        <span className="text">
+                                          Product Info
+                                        </span>
                                       </div>
                                     </button>
                                   </div>
 
-                                  <div class="row px-2 pt-1 showAll">
-                                    <div class="col-lg-12 col-md-12 col-sm-12">
-                                      <div class="text-end">
-                                        <p class="mb-1">
+                                  <div className="row px-2 pt-1 showAll">
+                                    <div className="col-lg-12 col-md-12 col-sm-12">
+                                      <div className="text-end">
+                                        <p className="mb-1">
                                           <span
-                                            class="text-showAll"
+                                            className="text-showAll"
                                             data-bs-toggle="collapse"
                                             href="#collapseExample"
                                             role="button"
@@ -2363,42 +2321,42 @@ function Dashboard() {
                                             {" "}
                                             Show all
                                           </span>
-                                          <i class="bi bi-caret-down-fill icon-s"></i>
+                                          <i className="bi bi-caret-down-fill icon-s"></i>
                                         </p>
                                       </div>
                                     </div>
 
                                     <div
-                                      class="collapse p-1 pb-2"
+                                      className="collapse p-1 pb-2"
                                       id="collapseExample"
                                     >
-                                      <div class="">
-                                        <div class="d-flex gap-3 pt-2 tab-1-buttons">
+                                      <div className="">
+                                        <div className="d-flex gap-3 pt-2 tab-1-buttons">
                                           <button
                                             type="button"
-                                            class="btn btn-light-grey btn-sm p-2"
+                                            className="btn btn-light-grey btn-sm p-2"
                                           >
                                             <div
-                                              class="d-flex justify-content-center align-items-center"
+                                              className="d-flex justify-content-center align-items-center"
                                               onClick={() => callOpenAI()}
                                             >
-                                              <div class="circle2 d-flex justify-content-center align-items-center">
-                                                <i class="bx bx-microphone"></i>
+                                              <div className="circle2 d-flex justify-content-center align-items-center">
+                                                <i className="bx bx-microphone"></i>
                                               </div>
-                                              <span class="text">
+                                              <span className="text">
                                                 Help me Pitch!
                                               </span>
                                             </div>
                                           </button>
                                           <button
                                             type="button"
-                                            class="btn btn-light-grey btn-sm p-2"
+                                            className="btn btn-light-grey btn-sm p-2"
                                           >
-                                            <div class="d-flex justify-content-center align-items-center">
-                                              <div class="circle2 d-flex justify-content-center align-items-center">
-                                                <i class="bx bxs-file"></i>
+                                            <div className="d-flex justify-content-center align-items-center">
+                                              <div className="circle2 d-flex justify-content-center align-items-center">
+                                                <i className="bx bxs-file"></i>
                                               </div>
-                                              <span class="text">
+                                              <span className="text">
                                                 Summarize
                                               </span>
                                             </div>
@@ -2416,55 +2374,55 @@ function Dashboard() {
                                                 : "btn btn-light-grey btn-sm p-2"
                                             }
                                           >
-                                            <div class="d-flex justify-content-center align-items-center">
-                                              <div class="circle3 d-flex justify-content-center align-items-center">
-                                                <i class="bx bxs-detail"></i>
+                                            <div className="d-flex justify-content-center align-items-center">
+                                              <div className="circle3 d-flex justify-content-center align-items-center">
+                                                <i className="bx bxs-detail"></i>
                                               </div>
-                                              <span class="text">
+                                              <span className="text">
                                                 Product Info
                                               </span>
                                             </div>
                                           </button>
                                         </div>
-                                        <div class="d-flex gap-3 pt-2 tab-1-buttons">
+                                        <div className="d-flex gap-3 pt-2 tab-1-buttons">
                                           <button
                                             type="button"
-                                            class="btn btn-light-grey btn-sm p-2"
+                                            className="btn btn-light-grey btn-sm p-2"
                                           >
                                             <div
-                                              class="d-flex justify-content-center align-items-center"
+                                              className="d-flex justify-content-center align-items-center"
                                               onClick={() => callOpenAI()}
                                             >
-                                              <div class="circle2 d-flex justify-content-center align-items-center">
-                                                <i class="bx bx-microphone"></i>
+                                              <div className="circle2 d-flex justify-content-center align-items-center">
+                                                <i className="bx bx-microphone"></i>
                                               </div>
-                                              <span class="text">
+                                              <span className="text">
                                                 Help me Pitch!
                                               </span>
                                             </div>
                                           </button>
                                           <button
                                             type="button"
-                                            class="btn btn-light-grey btn-sm p-2"
+                                            className="btn btn-light-grey btn-sm p-2"
                                           >
-                                            <div class="d-flex justify-content-center align-items-center">
-                                              <div class="circle2 d-flex justify-content-center align-items-center">
-                                                <i class="bx bxs-file"></i>
+                                            <div className="d-flex justify-content-center align-items-center">
+                                              <div className="circle2 d-flex justify-content-center align-items-center">
+                                                <i className="bx bxs-file"></i>
                                               </div>
-                                              <span class="text">
+                                              <span className="text">
                                                 Summarize
                                               </span>
                                             </div>
                                           </button>
                                           <button
                                             type="button"
-                                            class="btn btn-light-grey btn-sm p-2"
+                                            className="btn btn-light-grey btn-sm p-2"
                                           >
-                                            <div class="d-flex justify-content-center align-items-center">
-                                              <div class="circle3 d-flex justify-content-center align-items-center">
-                                                <i class="bx bxs-detail"></i>
+                                            <div className="d-flex justify-content-center align-items-center">
+                                              <div className="circle3 d-flex justify-content-center align-items-center">
+                                                <i className="bx bxs-detail"></i>
                                               </div>
-                                              <span class="text">
+                                              <span className="text">
                                                 Product Info
                                               </span>
                                             </div>
@@ -2474,11 +2432,11 @@ function Dashboard() {
                                     </div>
                                   </div>
 
-                                  <div class="row pt-2 tabExpandBorder">
-                                    <div class="col-lg-12 col-md-12 col-sm-12">
-                                      <div class="d-flex justify-content-end ">
+                                  <div className="row pt-2 tabExpandBorder">
+                                    <div className="col-lg-12 col-md-12 col-sm-12">
+                                      <div className="d-flex justify-content-end ">
                                         <i
-                                          class="bi bi-arrows-angle-expand btn btn-primary"
+                                          className="bi bi-arrows-angle-expand btn btn-primary"
                                           type="button"
                                           data-bs-toggle="modal"
                                           data-bs-target="#tab1ModalLabel"
@@ -2487,19 +2445,19 @@ function Dashboard() {
                                     </div>
                                   </div>
 
-                                  <div class="row pt-1 px-3">
+                                  <div className="row pt-1 px-3">
                                     {pitchInfo.map((data, index) => {
                                       return (
                                         <div
-                                          class="col-lg-12 col-md-12 col-sm-12"
+                                          className="col-lg-12 col-md-12 col-sm-12"
                                           style={{ paddingBottom: "1.5em" }}
                                           key={index}
                                         >
-                                          <div class="d-flex">
-                                            <div class="circleBot d-flex justify-content-center align-items-center">
-                                              <i class="bi bi-patch-question"></i>
+                                          <div className="d-flex">
+                                            <div className="circleBot d-flex justify-content-center align-items-center">
+                                              <i className="bi bi-patch-question"></i>
                                             </div>
-                                            <div class="d-flex gap-2 pb-2 align-items-center">
+                                            <div className="d-flex gap-2 pb-2 align-items-center">
                                               <span>
                                                 magic
                                                 <span
@@ -2510,7 +2468,7 @@ function Dashboard() {
                                                 >
                                                   CX
                                                 </span>{" "}
-                                                <span class="timeBotText">
+                                                <span className="timeBotText">
                                                   {data.time}{" "}
                                                   <span>{data.type}</span>
                                                 </span>
@@ -2518,8 +2476,10 @@ function Dashboard() {
                                             </div>
                                           </div>
 
-                                          <div class="chatBox">
-                                            <p class="p-text">{data.info}</p>
+                                          <div className="chatBox">
+                                            <p className="p-text">
+                                              {data.info}
+                                            </p>
                                           </div>
                                         </div>
                                       );
@@ -2529,24 +2489,24 @@ function Dashboard() {
 
                                 <input
                                   type="radio"
-                                  class="tabs__radio"
+                                  className="tabs__radio"
                                   name="tabs-example"
                                   id="tab2"
                                   onChange={() => setTab("tab2")}
                                   checked={tab === "tab2"}
                                 />
-                                <label for="tab2" class="tabs__label">
-                                  <i class="bx bxs-message fs-4"></i>
+                                <label htmlFor="tab2" className="tabs__label">
+                                  <i className="bx bxs-message fs-4"></i>
                                 </label>
                                 <div
-                                  class="tabs__content tab_2_content"
+                                  className="tabs__content tab_2_content"
                                   id="tabs"
                                 >
-                                  <div class="row">
-                                    <div class="col-lg-12 col-md-12 col-sm-12">
-                                      <div class="d-flex justify-content-end ">
+                                  <div className="row">
+                                    <div className="col-lg-12 col-md-12 col-sm-12">
+                                      <div className="d-flex justify-content-end ">
                                         <i
-                                          class="bi bi-arrows-angle-expand btn btn-primary"
+                                          className="bi bi-arrows-angle-expand btn btn-primary"
                                           type="button"
                                           data-bs-toggle="modal"
                                           data-bs-target="#tab2ModalLabel"
@@ -2555,21 +2515,21 @@ function Dashboard() {
                                     </div>
                                   </div>
 
-                                  <div class="row px-1">
+                                  <div className="row px-1">
                                     {chatBoxData.map((data, index) => {
                                       return (
                                         <div
-                                          class="col-lg-12 col-md-12 col-sm-12"
+                                          className="col-lg-12 col-md-12 col-sm-12"
                                           key={index}
                                         >
                                           <div
-                                            class={
+                                            className={
                                               data.name == "You"
                                                 ? "d-flex justify-content-end position-relative"
                                                 : "d-flex align-items-center"
                                             }
                                           >
-                                            <div class="circleBotImg d-flex justify-content-center align-items-center">
+                                            <div className="circleBotImg d-flex justify-content-center align-items-center">
                                               {/* <Avatar
                                                 size={30}
                                                 round={true}
@@ -2580,8 +2540,8 @@ function Dashboard() {
                                                 }
                                               /> */}
                                             </div>
-                                            <div class="d-flex gap-2 pb-2 align-items-center">
-                                              <span class="textBot">
+                                            <div className="d-flex gap-2 pb-2 align-items-center">
+                                              <span className="textBot">
                                                 <Avatar
                                                   size={30}
                                                   round={true}
@@ -2593,11 +2553,11 @@ function Dashboard() {
                                                 />{" "}
                                                 {data.name}
                                               </span>
-                                              <span class="timeBotText">
+                                              <span className="timeBotText">
                                                 {data.time}
                                               </span>
                                               <br />
-                                              <span class="timeBotText">
+                                              <span className="timeBotText">
                                                 {data.email}
                                               </span>
                                             </div>
@@ -2611,7 +2571,7 @@ function Dashboard() {
                                                 : "chatBox-3 position-relative"
                                             }
                                           >
-                                            <p class="p-text">{data.msg}</p>
+                                            <p className="p-text">{data.msg}</p>
                                             <div
                                               className={getClassName(
                                                 data.sentiment
@@ -2627,28 +2587,28 @@ function Dashboard() {
 
                                 <input
                                   type="radio"
-                                  class="tabs__radio"
+                                  className="tabs__radio"
                                   name="tabs-example"
                                   id="tab3"
                                   onChange={() => setTab("tab3")}
                                   checked={tab === "tab3"}
                                 />
-                                <label for="tab3" class="tabs__label">
-                                  <i class="bx bxs-file fs-4"></i>
+                                <label htmlFor="tab3" className="tabs__label">
+                                  <i className="bx bxs-file fs-4"></i>
                                 </label>
                                 <div
-                                  class="tabs__content tab_1_content p-2"
+                                  className="tabs__content tab_1_content p-2"
                                   id="aiFeatureTab"
                                 >
                                   {pdfFiles.map((data, index) => {
                                     return (
                                       <div
-                                        class="col-lg-12 col-md-12 col-sm-12"
+                                        className="col-lg-12 col-md-12 col-sm-12"
                                         style={{ paddingBottom: "1.5em" }}
                                         key={index}
                                       >
-                                        <div class="d-flex">
-                                          <div class="d-flex gap-2 pb-2 align-items-center">
+                                        <div className="d-flex">
+                                          <div className="d-flex gap-2 pb-2 align-items-center">
                                             <span>
                                               magic
                                               <span
@@ -2663,7 +2623,7 @@ function Dashboard() {
                                           </div>
                                         </div>
 
-                                        <div class="chatBox">
+                                        <div className="chatBox">
                                           <span>
                                             Visit here for {data.name}
                                           </span>
@@ -2689,25 +2649,25 @@ function Dashboard() {
 
                                 <input
                                   type="radio"
-                                  class="tabs__radio"
+                                  className="tabs__radio"
                                   name="tabs-example"
                                   id="tab4"
                                   onChange={() => setTab("tab4")}
                                   checked={tab === "tab4"}
                                 />
-                                <label for="tab4" class="tabs__label">
-                                  <i class="bx bxs-video fs-4"></i>
+                                <label htmlFor="tab4" className="tabs__label">
+                                  <i className="bx bxs-video fs-4"></i>
                                 </label>
                                 <div
-                                  class="tabs__content tab_1_content p-2"
+                                  className="tabs__content tab_1_content p-2"
                                   id="aiFeatureTab"
                                 >
                                   <div
-                                    class="col-lg-12 col-md-12 col-sm-12"
+                                    className="col-lg-12 col-md-12 col-sm-12"
                                     style={{ paddingBottom: "1.5em" }}
                                   >
-                                    <div class="d-flex">
-                                      <div class="d-flex gap-2 pb-2 align-items-center">
+                                    <div className="d-flex">
+                                      <div className="d-flex gap-2 pb-2 align-items-center">
                                         <span>
                                           magic
                                           <span
@@ -2723,7 +2683,7 @@ function Dashboard() {
                                     </div>
 
                                     <div
-                                      class="chatBox"
+                                      className="chatBox"
                                       onClick={() => {
                                         // <Redire
                                       }}
@@ -2739,7 +2699,7 @@ function Dashboard() {
                                       />
                                     </div>
                                   </div>
-                                  {/* <div class="row pt-1 px-3">
+                                  {/* <div className="row pt-1 px-3">
                                     <ReactPlayer url="https://ak.picdn.net/shutterstock/videos/1070767552/preview/stock-footage-beef-burger-ingredients-falling-and-landing-in-the-bun-one-by-one-in-slow-motion-fps.webm" playing loop autoPlay height="20%" width="100%"/>
                                   </div> */}
                                 </div>
@@ -2762,233 +2722,37 @@ function Dashboard() {
           </div>
         </>
       ) : person == "Client" ? (
-        <>
-          <main className="content-client  px-3 py-2">
-            <div className="container-fluid">
-              <div className="row mt-3 ">
-                <div className="col-lg-12 col-md-12 col-sm-12">
-                  <div className="row pt-3">
-                    <div className="col-lg-12 col-md-12 col-sm-12">
-                      <div className="card">
-                        <div className="client-video-container">
-                          {
-                            //(peers.length == 1) &&
-                            //<ClientVideo1 peer={peers[0]} />
-                          }
-                          {
-                            //(peers.length == 2) &&
-                            //<>
-                            //<ClientVideo1 peer={peers[0]} />
-                            //</><ClientVideo2 peer={peers[1]} />
-                            //</>
-                          }
-                          {peers.map((peer, index) => {
-                            return (
-                              <video
-                                key={peer.peerID}
-                                playsInline
-                                muted={muteSalesPerson}
-                                ref={salespersonVideo}
-                                autoPlay
-                              ></video>
-                            );
-                          })}
-                          {DealerPeers.map((peer, index) => {
-                            return (
-                              <video
-                                key={index}
-                                playsInline
-                                muted={muteDealer}
-                                ref={dealerVideo}
-                                autoPlay
-                              ></video>
-                            );
-                          })}
-
-                          <div className="profile-overlay-client">
-                            {userVideo && (
-                              <video
-                                playsInline
-                                muted
-                                ref={userVideo}
-                                autoPlay
-                                loop
-                              ></video>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
-                          <div className="controls-client">
-                            {/* <button className="btn control-circle-client">
-                              <i className="bi bi-volume-up"></i>
-                            </button> */}
-                            {muted ? (
-                              <button
-                                className="btn control-circle-client"
-                                onClick={() => unmuteMySelf()}
-                              >
-                                <i className="bi bi-mic-mute"></i>
-                              </button>
-                            ) : (
-                              <button
-                                className="btn control-circle-client"
-                                onClick={() => muteMySelf()}
-                              >
-                                <i className="bi bi-mic"></i>
-                              </button>
-                            )}
-                            {/* <button className="btn control-circle-client" onClick={()=>muteMySelf()}>
-																<i className={muted?"bi bi-mic-mute": "bi bi-mic"}></i>
-															</button> */}
-                            <button
-                              className="btn control-circle-red-client"
-                              onClick={() => leaveCall()}
-                            >
-                              <i className="bi bi-telephone-fill"></i>
-                            </button>
-                            {webCamStatus ? (
-                              <button
-                                class="btn control-circle-client"
-                                onClick={() => toggleVideo()}
-                              >
-                                <i className="bi bi-camera-video"></i>
-                              </button>
-                            ) : (
-                              <button
-                                class="btn control-circle-client"
-                                onClick={() => toggleVideo()}
-                              >
-                                <i className="bi bi-camera-video-off"></i>
-                              </button>
-                            )}
-                            {/* <button className="btn control-circle-client">
-                              <i className="bi bi-people"></i>
-                            </button> */}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </main>
-        </>
+        <ClientDealerView
+          peers={peers}
+          muteSalesPerson={muteSalesPerson}
+          salespersonVideo={salespersonVideo}
+          userVideo={userVideo}
+          webCamStatus={webCamStatus}
+          leaveCall={leaveCall}
+          toggleVideo={toggleVideo}
+          muteMySelf={muteMySelf}
+          unmuteMySelf={unmuteMySelf}
+          muted={muted}
+          videoRef={dealerVideo}
+          mutePerson={muteDealer}
+          OtherPeers={DealerPeers}
+        />
       ) : (
-        <>
-          <main className="content-client  px-3 py-2">
-            <div className="container-fluid">
-              <div className="row mt-3 ">
-                <div className="col-lg-12 col-md-12 col-sm-12">
-                  <div className="row pt-3">
-                    <div className="col-lg-12 col-md-12 col-sm-12">
-                      <div className="card">
-                        <div className="client-video-container">
-                          {
-                            //(peers.length == 1) &&
-                            //<ClientVideo1 peer={peers[0]} />
-                          }
-                          {
-                            //(peers.length == 2) &&
-                            //<>
-                            //<ClientVideo1 peer={peers[0]} />
-                            //</><ClientVideo2 peer={peers[1]} />
-                            //</>
-                          }
-                          {peers.map((peer, index) => {
-                            return (
-                              <video
-                                key={peer.peerID}
-                                playsInline
-                                ref={salespersonVideo}
-                                muted={muteSalesPerson}
-                                autoPlay
-                              ></video>
-                            );
-                          })}
-                          {ClientPeers.map((peer, index) => {
-                            return (
-                              <video
-                                key={index}
-                                playsInline
-                                muted={muteClient}
-                                ref={clientVideo}
-                                autoPlay
-                              ></video>
-                            );
-                          })}
-
-                          <div className="profile-overlay-client">
-                            {userVideo && (
-                              <video
-                                playsInline
-                                muted
-                                ref={userVideo}
-                                autoPlay
-                                loop
-                              ></video>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
-                          <div className="controls-client">
-                            {/* <button className="btn control-circle-client">
-                              <i className="bi bi-volume-up"></i>
-                            </button> */}
-                            {muted ? (
-                              <button
-                                className="btn control-circle-client"
-                                onClick={() => unmuteMySelf()}
-                              >
-                                <i className="bi bi-mic-mute"></i>
-                              </button>
-                            ) : (
-                              <button
-                                className="btn control-circle-client"
-                                onClick={() => muteMySelf()}
-                              >
-                                <i className="bi bi-mic"></i>
-                              </button>
-                            )}
-                            {/* <button className="btn control-circle-client" onClick={()=>muteMySelf()}>
-																<i className={muted?"bi bi-mic-mute": "bi bi-mic"}></i>
-															</button> */}
-                            <button
-                              className="btn control-circle-red-client"
-                              onClick={() => leaveCall()}
-                            >
-                              <i className="bi bi-telephone-fill"></i>
-                            </button>
-                            {webCamStatus ? (
-                              <button
-                                class="btn control-circle-client"
-                                onClick={() => toggleVideo()}
-                              >
-                                <i className="bi bi-camera-video"></i>
-                              </button>
-                            ) : (
-                              <button
-                                class="btn control-circle-client"
-                                onClick={() => toggleVideo()}
-                              >
-                                <i className="bi bi-camera-video-off"></i>
-                              </button>
-                            )}
-                            {/* <button className="btn control-circle-client">
-                              <i className="bi bi-people"></i>
-                            </button> */}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </main>
-        </>
+        <ClientDealerView
+          peers={peers}
+          muteSalesPerson={muteSalesPerson}
+          salespersonVideo={salespersonVideo}
+          userVideo={userVideo}
+          webCamStatus={webCamStatus}
+          leaveCall={leaveCall}
+          toggleVideo={toggleVideo}
+          muteMySelf={muteMySelf}
+          unmuteMySelf={unmuteMySelf}
+          muted={muted}
+          videoRef={clientVideo}
+          mutePerson={muteClient}
+          OtherPeers={ClientPeers}
+        />
       )}
       {/* </div> */}
     </>

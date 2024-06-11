@@ -13,6 +13,7 @@ const {
 const containerName = constants.CONTAINER_NAME;
 const connectionString = constants.AZURE_STORAGE_CONNECTION_STRING;
 const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
 (function () {
   "use strict";
 
@@ -380,29 +381,34 @@ const fs = require('fs');
 //   }
 
     function writeBlobFile(msg,data){
-      console.log(`383--> ${JSON.stringify(data)}`);
+      data = JSON.parse(JSON.stringify(data))
       let blobLink = '';
-        console.log(constants.AZURE_STORAGE_CONNECTION_STRING);
         const AZURE_STORAGE_CONNECTION_STRING = constants.AZURE_STORAGE_CONNECTION_STRING;
 
-          const blobServiceClient = BlobServiceClient.fromConnectionString(
-            AZURE_STORAGE_CONNECTION_STRING
-          );
+          const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+
           const containerName = constants.CONTAINER_NAME;
+
           const containerClient = blobServiceClient.getContainerClient(containerName);
+
           var date = new Date()
-          const blockBlobClient = containerClient.getBlockBlobClient(`meeting-details${date}`)
+          const fileName = 'meeting-detail'+date+'.txt';
+          // const textBuffer = Buffer.from(data.history, 'text');
+          // console.log('397-->',textBuffer);
           try{
+            const blockBlobClient = containerClient.getBlockBlobClient(`meeting-details${date}`)
           const uploadBlobResponse = blockBlobClient.upload(
-            msg,
-            Buffer.byteLength(msg)
+            data.history,
+            data.history.length
           );
+          console.log('404-->',blockBlobClient.url);
           if(uploadBlobResponse){
             console.log("File uploaded");
           } else {
             console.log("File not uploaded");
           }
-          var blobClient = containerClient.getBlobClient('meeting-details');
+          var blobClient = containerClient.getBlobClient(`meeting-details${date}`);
+          
           var url = blobClient.generateSasUrl({
             permissions: BlobSASPermissions.parse('r'),
             startsOn: new Date(),
@@ -413,22 +419,16 @@ const fs = require('fs');
           promiseObject.then(async url => {
             // console.log('411-->',url);
             let body ={
-              "meetingId": data.roomID,
-              "summarize":"Test summary 2",
-              "recordLink" :"https://www.demo.com/recording/",
-              "fullConversationLink" : url,
-              "sentimentAnalysis" : data.sentiment
-            }
-            blobLink = url;
-            console.log('423-->',body);
-            
-            const res = await axios.post("https://magiccxhs.azurewebsites.net/update-ticket",{
               "meetingURL": "https://magiccx.azurewebsites.net/"+data.roomID,
               "summarize": data.msg,
               "recordLink" :"https://www.demo.com/recording/",
-              "fullConversationLink" : "",
-              "sentimentAnalysis" : ""
-          })
+              "fullConversationLink" : url,
+              "sentimentAnalysis" : data.sentiment
+          }
+            blobLink = url;
+            console.log('423-->',body);
+            
+            const res = await axios.post("https://magiccxhs.azurewebsites.net/update-ticket",body)
             console.log('426-->',res.data);
             if(res.status==200){
               console.log("Updated Successfully");
@@ -439,7 +439,7 @@ const fs = require('fs');
             console.error(error);
           });
         } catch (err){
-            console.log(err);
+            console.log('442--',err);
         }
         
     }
@@ -554,9 +554,8 @@ const fs = require('fs');
         role: payload.role,
       });
     });
-
+    try{
     socket.on("sendMSG", (data) => {
-      // console.log(`532--> ${JSON.stringify(data)}`);
       io.in(data.to).emit("sendMSGToSalesmen", {
         to: data.to,
         message: data.message,
@@ -566,6 +565,9 @@ const fs = require('fs');
         email: data.email
       });
     });
+    }catch(e){
+      console.log('570-->',e);
+    }
 
     socket.on("hide:me", (data) => {
       // console.log(`413--> ${JSON.stringify(data)}`);
@@ -606,10 +608,7 @@ const fs = require('fs');
     });
 
     socket.on("salesperson-disconnected",(data)=>{
-        console.log(`584--> ${JSON.stringify(data)}`);
-        writeBlobFile(data.msg,data);
-        // console.log("586-->",url);
-        
+        // writeBlobFile(data.msg,data);        
         socket.to(data.roomID).emit("sp-disconnect",{roomId: data.roomID, id: data.id})
     });
 
@@ -617,11 +616,15 @@ const fs = require('fs');
       writeBlobMediaFile(data)
     });
 
-    // socket.on("disconnect",(id)=>{
-    //   console.log(`620--> ${socket.id}`);
-    //   let roomId = users[socket.id];
-    //   console.log('622-->',roomId);
-    // })
+    socket.on("disconnect",(reason)=>{
+      let room = socketToRoom[socket.id];
+      if(room){
+        var user = users[room];
+        let role = user.find(data=>data.id === socket.id);
+        socket.to(room).emit("leave:room",role);
+      }
+    });
+
   });
 
   server.listen(port, () => {
