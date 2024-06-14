@@ -115,8 +115,7 @@ function Dashboard() {
   const authorizationEndpoint =
     "https://magiccx-backend.azurewebsites.net/api/get-speech-token";
   let subscriptionKey = "b728cec31ab14a2da7749569701f599d";
-  let openai_subscription_key =
-    "";
+  let openai_subscription_key = "";
   let conversation_history = "";
   let [conversation, setConversation] = useState("");
   const [muted, setMuted] = useState(false);
