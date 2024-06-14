@@ -1,4 +1,6 @@
-const ClientDealerView = (props) => {
+import React from "react";
+import ButtonControls from "./ButtonControls";
+const CallInterfaceView = (props) => {
   const {
     peers,
     muteSalesPerson,
@@ -12,7 +14,7 @@ const ClientDealerView = (props) => {
     muted,
     videoRef,
     mutePerson,
-    OtherPeers
+    OtherPeers,
   } = props;
   return (
     <main className="content-client  px-3 py-2">
@@ -59,47 +61,14 @@ const ClientDealerView = (props) => {
                     </div>
                   </div>
 
-                  <div className="controls-wrapper position-absolute bottom-0 start-50 translate-middle-x">
-                    <div className="controls-client">
-                      {muted ? (
-                        <button
-                          className="btn control-circle-client"
-                          onClick={() => unmuteMySelf()}
-                        >
-                          <i className="bi bi-mic-mute"></i>
-                        </button>
-                      ) : (
-                        <button
-                          className="btn control-circle-client"
-                          onClick={() => muteMySelf()}
-                        >
-                          <i className="bi bi-mic"></i>
-                        </button>
-                      )}
-
-                      <button
-                        className="btn control-circle-red-client"
-                        onClick={() => leaveCall()}
-                      >
-                        <i className="bi bi-telephone-fill"></i>
-                      </button>
-                      {webCamStatus ? (
-                        <button
-                          className="btn control-circle-client"
-                          onClick={() => toggleVideo()}
-                        >
-                          <i className="bi bi-camera-video"></i>
-                        </button>
-                      ) : (
-                        <button
-                          className="btn control-circle-client"
-                          onClick={() => toggleVideo()}
-                        >
-                          <i className="bi bi-camera-video-off"></i>
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  <ButtonControls
+                    muted={muted}
+                    unmuteMySelf={unmuteMySelf}
+                    muteMySelf={muteMySelf}
+                    leaveCall={leaveCall}
+                    webCamStatus={webCamStatus}
+                    toggleVideo={toggleVideo}
+                  />
                 </div>
               </div>
             </div>
@@ -110,4 +79,4 @@ const ClientDealerView = (props) => {
   );
 };
 
-export default ClientDealerView;
+export default CallInterfaceView;

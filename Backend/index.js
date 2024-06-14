@@ -556,6 +556,7 @@ const { v4: uuidv4 } = require('uuid');
     });
     try{
     socket.on("sendMSG", (data) => {
+      // console.log(`532--> ${JSON.stringify(data)}`);
       io.in(data.to).emit("sendMSGToSalesmen", {
         to: data.to,
         message: data.message,
@@ -564,6 +565,7 @@ const { v4: uuidv4 } = require('uuid');
         sentiment: data.sentiment,
         email: data.email
       });
+      // console.log("Sent")
     });
     }catch(e){
       console.log('570-->',e);
@@ -608,6 +610,7 @@ const { v4: uuidv4 } = require('uuid');
     });
 
     socket.on("salesperson-disconnected",(data)=>{
+      console.log('609-->',data.history);
         // writeBlobFile(data.msg,data);        
         socket.to(data.roomID).emit("sp-disconnect",{roomId: data.roomID, id: data.id})
     });

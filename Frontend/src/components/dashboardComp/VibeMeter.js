@@ -1,3 +1,4 @@
+import React from "react";
 import bulb from "../images/bulb.png";
 const VibeMeter = ({ vibeScore }) => {
   return (

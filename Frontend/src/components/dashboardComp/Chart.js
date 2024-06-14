@@ -1,3 +1,4 @@
+import React from "react";
 import Charts from "react-apexcharts";
 const ChartComponent = ({chartState, selected}) => {
   return (

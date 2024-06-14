@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams} from "react-router-dom";
 import Peer from "simple-peer";
 import io from "socket.io-client";
-import Avatar from "@mui/material/Avatar";
 import Navbar from "./navbar.js";
 import Header from "./header.js";
 import OpenAI from "openai";
